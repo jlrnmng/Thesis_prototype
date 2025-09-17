@@ -1,0 +1,17 @@
+# Virtual environments
+new_hirely_env/
+hirely_env/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/

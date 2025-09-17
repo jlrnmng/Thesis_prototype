@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ✅ Montserrat font -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Hirely</title>
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f8fefc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            width: 95%;
+            max-width: 2200px; /* ⬆️ Wider container so text stays 2 lines */
+            margin: auto;
+        }
+
+        /* ✅ Left side: Logo + Text */
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            flex: 1.2;
+            margin-top: 150px;
+            margin-left: 100px;
+        }
+
+        .brand-row {
+            display: flex;
+            align-items: center;
+        }
+
+        .brand-row img {
+            width: 300px;
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .logo-container p {
+            color: #444;
+            font-size: 20px;
+            max-width: 500px;
+            margin-top: 15px;
+            line-height: 1.4;
+        }
+
+        /* ✅ Login form (right) with stronger shadow */
+        .login-box {
+            background-color: white;
+            padding: 40px 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 
+                        0 4px 12px rgba(0, 0, 0, 0.1); /* ⬆️ Stronger layered shadow */
+            width: 380px;
+            min-height: 450px;
+            margin-left: auto;
+            margin-right: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* Inputs & buttons */
+        .input-field,
+        .login-btn,
+        .create-account {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            font-weight: bold;
+            box-sizing: border-box;
+        }
+
+        .input-field {
+            background-color: #f9f9f9;
+            border: 2px solid #e0f4ef;
+            color: #333;
+            transition: all 0.2s ease;
+        }
+
+        .input-field:focus {
+            border-color: #2eccb0;
+            outline: none;
+            background-color: #ffffff;
+        }
+
+        .login-btn {
+            background-color: #2eccb0;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .login-btn:hover {
+            background-color: #27b89f;
+        }
+
+        .login-box .link {
+            display: block;
+            text-align: center;
+            margin: 8px 0;
+            color: #2eccb0;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .login-box .link:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            border-top: 1px solid #eee;
+            margin: 12px 0;
+        }
+
+        .create-account {
+            display: block;
+            text-align: center;
+            background-color: #34d399;
+            color: white;
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+        }
+
+        .create-account:hover {
+            background-color: #2bb483;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        /* ✅ Mobile responsiveness */
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+                gap: 30px;
+                text-align: center;
+            }
+
+            .logo-container {
+                margin-left: 0;
+                text-align: center;
+                align-items: center;
+            }
+
+            .brand-row img {
+                width: 180px;
+            }
+
+            .logo-container p {
+                font-size: 16px;
+                max-width: none;
+            }
+
+            .login-box {
+                margin: 0 auto;
+                width: 90%;
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12); /* ✅ Softer shadow for mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Brand section (left) -->
+        <div class="logo-container">
+            <div class="brand-row">
+                <img src="/static/hirely.png" alt="MyApp Logo">
+            </div>
+            <p>Combining Artificial Intelligence and Human Potential to Match Talent With the Perfect Roles.</p>
+        </div>
+
+        <!-- Login form (right) -->
+        <div class="login-box">
+            <form method="POST" action="/login">
+                {% if error %}
+                <div class="error">{{ error }}</div>
+                {% endif %}
+
+                <input type="text" name="username" placeholder="Email or Username" class="input-field" required>
+                <input type="password" name="password" placeholder="Password" class="input-field" required>
+
+                <button type="submit" class="login-btn">Log In</button>
+
+                <a href="#" class="link">Forgotten password?</a>
+
+                <div class="divider"></div>
+
+                <a href="/register" class="create-account">Create New Account</a>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
