@@ -7,13 +7,6 @@ import os
 
 auth_bp = Blueprint('auth', __name__)
 
-from flask import Blueprint, request, jsonify, session, current_app
-from app.models import db, User
-from werkzeug.utils import secure_filename
-import os
-
-auth_bp = Blueprint('auth', __name__)
-
 @auth_bp.route('/register', methods=['POST'])
 def register():
     try:
@@ -72,43 +65,36 @@ def register():
         return jsonify({'error': str(e)}), 500
 
 
+@auth_bp.route('/create-admin', methods=['POST'])
+def create_admin():
+    data = request.json
+    email = data.get('email')
+    password = data.get('password')
+    first_name = data.get('first_name')
+    last_name = data.get('last_name')
+    middle_name = data.get('middle_name')
 
-@auth_bp.route('/create-first-admin', methods=['POST'])
-def create_first_admin():
-    try:
-        # Check if any admin already exists
-        if User.query.filter_by(is_admin=True).first():
-            return jsonify({'error': 'An admin already exists'}), 400
-            
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-            
-        username = data.get('username')
-        email = data.get('email')
-        password = data.get('password')
-        
-        if not all([username, email, password]):
-            return jsonify({'error': 'Missing required fields'}), 400
-        
-        if User.query.filter_by(username=username).first():
-            return jsonify({'error': 'Username already exists'}), 409
-            
-        if User.query.filter_by(email=email).first():
-            return jsonify({'error': 'Email already exists'}), 409
-            
-        user = User(username=username, email=email, is_admin=True)
-        user.set_password(password)
-        db.session.add(user)
-        db.session.commit()
-        
-        return jsonify({
-            'message': 'First admin created successfully',
-            'user': user.to_dict()
-        }), 201
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    if not email or not password:
+        return jsonify({'message': 'Email and password are required'}), 400
+
+    # Prevent duplicate emails
+    if User.query.filter_by(email=email).first():
+        return jsonify({'message': 'Email already registered'}), 400
+
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+    new_admin = User(
+        email=email,
+        password_hash=hashed_password,
+        first_name=first_name,
+        last_name=last_name,
+        middle_name=middle_name,
+        role='admin'
+    )
+
+    db.session.add(new_admin)
+    db.session.commit()
+    return jsonify({'message': f'Admin {email} created successfully'})
+
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -117,25 +103,28 @@ def login():
         if not data:
             return jsonify({'error': 'No data provided'}), 400
             
-        username = data.get('username')
+        email = data.get('email')
         password = data.get('password')
         
-        if not all([username, password]):
-            return jsonify({'error': 'Missing username or password'}), 400
+        if not all([email, password]):
+            return jsonify({'error': 'Missing email or password'}), 400
         
-        user = User.query.filter_by(username=username).first()
+        user = User.query.filter_by(email=email).first()
         
         if user and user.check_password(password):
             session['user_id'] = user.id
             return jsonify({
                 'message': 'Login successful',
-                'user': user.to_dict()
+                'user': user.to_dict(),
+                'is_admin': user.is_admin  # 👈 include admin status
             }), 200
             
         return jsonify({'error': 'Invalid credentials'}), 401
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
 
 @auth_bp.route('/logout', methods=['POST'])
 def logout():
@@ -151,3 +140,14 @@ def check_auth():
             return jsonify({'authenticated': True, 'user': user.to_dict()}), 200
     
     return jsonify({'authenticated': False}), 200
+
+
+@auth_bp.route('/admins', methods=['GET'])
+def list_admins():
+    admins = User.query.filter_by(is_admin=True).all()
+    return jsonify([{
+        'id': admin.id,
+        'email': admin.email,
+        'first_name': admin.first_name,
+        'last_name': admin.last_name
+    } for admin in admins]), 200

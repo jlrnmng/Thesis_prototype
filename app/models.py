@@ -5,62 +5,51 @@ from werkzeug.security import generate_password_hash, check_password_hash
 db = SQLAlchemy()
 
 
+from app import db
+from werkzeug.security import generate_password_hash, check_password_hash
+
 class User(db.Model):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-
-    # 📝 Name fields
-    last_name = db.Column(db.String(80), nullable=False)
-    first_name = db.Column(db.String(80), nullable=False)
-    middle_name = db.Column(db.String(80))
-
-    # 📧 Contact
+    last_name = db.Column(db.String(100), nullable=False)
+    first_name = db.Column(db.String(100), nullable=False)
+    middle_name = db.Column(db.String(100))
     email = db.Column(db.String(120), unique=True, nullable=False)
-    phone = db.Column(db.String(30))
-    address = db.Column(db.Text)
+    phone = db.Column(db.String(20))
+    address = db.Column(db.String(255))
+    password_hash = db.Column(db.String(255), nullable=False)
+    resume = db.Column(db.String(255))  # filename/path
+    is_admin = db.Column(db.Boolean, default=False)  # ✅ single source of truth
 
-    # 🔑 Security
-    password_hash = db.Column(db.String(128))
-
-    # 📄 Resume filename
-    resume = db.Column(db.String(255))
-
-    # 👑 Role
-    is_admin = db.Column(db.Boolean, default=False)
-
-    # 🕒 Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    # 🔗 Relationship
-    applications = db.relationship('Application', backref='applicant', lazy=True)
-
-    # --- Helpers ---
+    # ----------------------------
+    # Password helpers
+    # ----------------------------
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        """Hash and store password."""
+        self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
 
     def check_password(self, password):
+        """Verify password against stored hash."""
         return check_password_hash(self.password_hash, password)
 
-    @property
-    def full_name(self):
-        """Return full name in 'Last, First Middle' format."""
-        middle = f" {self.middle_name}" if self.middle_name else ""
-        return f"{self.last_name}, {self.first_name}{middle}"
-
+    # ----------------------------
+    # Serialization helper
+    # ----------------------------
     def to_dict(self):
+        """Return safe user info for JSON responses."""
         return {
-            "id": self.id,
-            "last_name": self.last_name,
-            "first_name": self.first_name,
-            "middle_name": self.middle_name,
-            "email": self.email,
-            "phone": self.phone,
-            "address": self.address,
-            "resume": self.resume,
-            "is_admin": self.is_admin,
-            "created_at": self.created_at.isoformat() if self.created_at else None
+            'id': self.id,
+            'last_name': self.last_name,
+            'first_name': self.first_name,
+            'middle_name': self.middle_name,
+            'email': self.email,
+            'phone': self.phone,
+            'address': self.address,
+            'resume': self.resume,
+            'is_admin': self.is_admin
         }
+
 
 
 class Job(db.Model):
