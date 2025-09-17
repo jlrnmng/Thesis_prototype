@@ -3,6 +3,7 @@ from app.models import db, Application, Job, User
 from rank_bm25 import BM25Okapi
 import numpy as np
 import heapq
+from datetime import datetime
 from app.utils.decorators import admin_required
 
 shortlist_bp = Blueprint('shortlist', __name__)
@@ -15,6 +16,19 @@ def _get_snippet(text, term, radius=40):
     start = max(0, idx - radius)
     end = min(len(text), idx + len(term) + radius)
     return text[start:end].strip()
+
+def _generate_recommendation_reasoning(score, term_count):
+    """
+    Generate recommendation reasoning based on score and matching terms
+    """
+    if score > 1.5:
+        return f"Strong candidate with high relevance score ({score}) and {term_count} matching key terms. Recommended for interview."
+    elif score > 0.8:
+        return f"Good candidate match with moderate relevance score ({score}) and {term_count} relevant qualifications. Consider for interview."
+    elif score > 0.3:
+        return f"Potential candidate with some relevant experience (score: {score}). May require further evaluation."
+    else:
+        return f"Limited match with position requirements (score: {score}). Consider only if candidate pool is limited."
 
 @shortlist_bp.route('/<int:job_id>', methods=['GET'])
 @admin_required
@@ -49,18 +63,44 @@ def get_shortlist(job_id):
 
         # Build response
         results = []
-        for app, score in zip(top_applications, top_scores):
+        for rank, (app, score) in enumerate(zip(top_applications, top_scores), 1):
             user = User.query.get(app.user_id)
-            results.append({
-                'application_id': app.id,
-                'user_id': app.user_id,
-                'username': user.username,
-                'email': user.email,
-                'score': float(score),
-                'resume_preview': app.resume_text[:200] + '...' if len(app.resume_text) > 200 else app.resume_text
-            })
 
-        return jsonify(results), 200
+            candidate_info = {
+                'rank': rank,
+                'application_id': app.id,
+                'candidate_id': app.user_id,
+                'candidate_name': {
+                    'first_name': user.first_name,
+                    'middle_name': user.middle_name or '',
+                    'last_name': user.last_name,
+                    'full_name': user.full_name
+                },
+                'contact_email': user.email,
+                'relevance_score': round(float(score), 3),
+                'application_date': app.submission_date.strftime('%Y-%m-%d %H:%M'),
+                'resume_summary': app.resume_text[:300] + '...' if len(app.resume_text) > 300 else app.resume_text,
+                'cluster_category': app.cluster_id
+            }
+            results.append(candidate_info)
+
+        response = {
+            'job_details': {
+                'job_id': target_job.id,
+                'position': target_job.role,
+                'job_description': target_job.description,
+                'cluster_id': target_job.cluster_id
+            },
+            'shortlist_summary': {
+                'total_candidates_reviewed': len(applications),
+                'top_candidates_selected': len(results),
+                'selection_method': 'BM25 relevance scoring',
+                'generated_at': datetime.utcnow().strftime('%Y-%m-%d %H:%M')
+            },
+            'candidates': results
+        }
+
+        return jsonify(response), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -72,6 +112,7 @@ def explain_shortlist(application_id):
     try:
         application = Application.query.get_or_404(application_id)
         job = Job.query.get_or_404(application.job_id)
+        user = User.query.get(application.user_id)
 
         resume_text = application.resume_text or ""
         job_text = f"{job.role} {job.description}" or ""
@@ -116,18 +157,37 @@ def explain_shortlist(application_id):
         matched_tokens = sum(1 for t in set(tokenized_job) if t in tokenized_resume)
         token_coverage = matched_tokens / max(1, len(set(tokenized_job)))
 
-        return jsonify({
-            'application_id': application_id,
-            'job_id': job.id,
-            'job_role': job.role,
-            'overall_score': overall_score,
-            'top_contributing_terms': formatted_terms,
-            'token_coverage': round(token_coverage, 3),
-            'explanation': (
-                "Top job terms that made this resume rank highly are listed in "
-                "'top_contributing_terms' with contribution scores, counts, and snippets from the resume."
-            )
-        }), 200
+        recommendation_status = (
+            'Recommended' if overall_score > 1.0
+            else 'Consider' if overall_score > 0.5
+            else 'Low Match'
+        )
+
+        response = {
+            'candidate_details': {
+                'application_id': application_id,
+                'candidate_name': user.full_name,
+                'candidate_email': user.email,
+                'application_date': application.submission_date.strftime('%Y-%m-%d %H:%M')
+            },
+            'job_details': {
+                'job_id': job.id,
+                'position': job.role,
+                'department_cluster': job.cluster_id
+            },
+            'matching_analysis': {
+                'relevance_score': round(overall_score, 3),
+                'key_matching_terms': formatted_terms,
+                'token_coverage': round(token_coverage, 3),
+                'explanation': f"Candidate {user.full_name} scored {round(overall_score, 3)} based on resume containing relevant terms. Top contributing terms and context snippets are provided for review."
+            },
+            'recommendation': {
+                'status': recommendation_status,
+                'reasoning': _generate_recommendation_reasoning(overall_score, len(formatted_terms))
+            }
+        }
+
+        return jsonify(response), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
