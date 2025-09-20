@@ -1,10 +1,12 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 from sentence_transformers import SentenceTransformer
 import joblib
 import chromadb
 import os
 import sys
+import logging
 
 # Add the parent directory to the path so we can import from instance
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -14,6 +16,7 @@ model = None
 kmeans_model = None
 chroma_client = None
 jobs_collection = None
+logger = logging.getLogger(__name__)
 
 def create_app():
     app = Flask(__name__)
@@ -32,6 +35,7 @@ def create_app():
     
     # Load ML models (with error handling)
     global model, kmeans_model, chroma_client, jobs_collection
+    init_ok = False
     try:
         model = SentenceTransformer('all-MiniLM-L6-v2')
 
@@ -74,8 +78,7 @@ def create_app():
                             try:
                                 setattr(mod, 'capture', lambda *a, **kw: None)
                                 patched = True
-                                if _chroma_verbose:
-                                    print(f'Patched capture in module: {mod_name}')
+                                logger.debug('Patched capture in module: %s', mod_name)
                             except Exception:
                                 pass
 
@@ -91,27 +94,28 @@ def create_app():
                                     try:
                                         setattr(attr, 'capture', lambda self, *a, **kw: None)
                                         patched = True
-                                        if _chroma_verbose:
-                                            print(f'Patched capture on class: {mod_name}.{attr.__name__}')
+                                        logger.debug('Patched capture on class: %s.%s', mod_name, attr.__name__)
                                     except Exception:
                                         pass
                 except Exception as _e:
-                    if os.environ.get('CHROMA_VERBOSE', '0') == '1':
-                        print(f'Error while attempting aggressive telemetry patch: {_e}')
+                    logger.debug('Error while attempting aggressive telemetry patch: %s', _e)
 
                 if patched:
-                    if os.environ.get('CHROMA_VERBOSE', '0') == '1':
-                        print('ChromaDB telemetry disabled (CHROMA_DISABLE_TELEMETRY=1)')
+                    logger.debug('ChromaDB telemetry disabled (CHROMA_DISABLE_TELEMETRY=1)')
                 else:
-                    if os.environ.get('CHROMA_VERBOSE', '0') == '1':
-                        print('Warning: could not locate chromadb telemetry to patch; telemetry errors may still appear')
+                    logger.debug('Could not locate chromadb telemetry to patch; telemetry errors may still appear')
         except Exception as _tele_err:
             # Non-fatal: continue and try to create the client anyway
-            print(f'Warning: could not patch chromadb telemetry: {_tele_err}')
+            logger.debug('Warning: could not patch chromadb telemetry: %s', _tele_err)
 
         chroma_client = chromadb.PersistentClient(path=chroma_path)
         jobs_collection = chroma_client.get_or_create_collection(name="jobs")
-        print("ML models and ChromaDB initialized successfully")
+
+        # Persist chroma_path into app config so post-init checks can create an
+        # independent client (avoids relying on module globals which may be
+        # overwritten in some import flows).
+        app.config['CHROMA_PATH'] = chroma_path
+        init_ok = True
 
     except Exception as e:
         # Detect a common compatibility error: older Chroma DB schema missing 'collections.topic'
@@ -149,13 +153,11 @@ def create_app():
                 print(f"Automatic reset attempt failed: {ex_auto}")
 
         else:
-            err_str = str(e)
             # Some chromadb Posthog telemetry wrappers raise a benign message
             # about missing kw args; treat that as non-fatal when telemetry is
             # intentionally disabled.
             if 'Posthog.capture' in err_str or 'Posthog.capture:' in err_str or 'Posthog.capture' in err_str:
-                    if os.environ.get('CHROMA_VERBOSE', '0') == '1':
-                        print('Posthog telemetry error encountered and ignored (telemetry disabled).')
+                logger.debug('Posthog telemetry error encountered and ignored (telemetry disabled).')
             else:
                 print(f"Error loading models: {e}")
 
@@ -181,5 +183,55 @@ def create_app():
     # Create database tables
     with app.app_context():
         db.create_all()
+
+    def _run_db_health_checks(app):
+        """Return (sql_ok, chroma_ok, ncols) and print success message if both OK."""
+        sql_ok = False
+        chroma_ok = False
+        ncols = 0
+        try:
+            with app.app_context():
+                db.session.execute(text('SELECT 1'))
+            sql_ok = True
+        except Exception as _sql_err:
+            logger.debug('SQLAlchemy health check failed: %s', _sql_err)
+
+        try:
+            chroma_path_cfg = app.config.get('CHROMA_PATH')
+            if chroma_path_cfg:
+                try:
+                    chk_client = chromadb.PersistentClient(path=chroma_path_cfg)
+                    cols = chk_client.list_collections()
+                    if isinstance(cols, (list, tuple)):
+                        ncols = len(cols)
+                    chroma_ok = True
+                except Exception as _c_err:
+                    logger.debug('ChromaDB health check failed: %s', _c_err)
+        except Exception as _c_err_outer:
+            if os.environ.get('CHROMA_VERBOSE', '0') == '1':
+                print('ChromaDB health check failed:', _c_err_outer)
+
+        if sql_ok and chroma_ok:
+            # Print success unconditionally (user requested a clear result)
+            print(f'Databases initialized OK: SQLAlchemy connected; ChromaDB connected ({ncols} collections)')
+
+        return sql_ok, chroma_ok, ncols
+
+    # Post-initialization health checks: only run when init_ok is True
+    try:
+        if init_ok:
+            # Defer to the centralized _run_db_health_checks to avoid duplicate
+            # and noisy startup output; that helper will print a single concise
+            # success line when both DBs are OK.
+            pass
+    except Exception:
+        # avoid bubbling unexpected errors during final health checks
+        pass
+
+    # Run final health checks and print a single concise success line if both OK.
+    try:
+        _run_db_health_checks(app)
+    except Exception:
+        pass
     
     return app
