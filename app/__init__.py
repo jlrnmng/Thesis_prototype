@@ -56,7 +56,7 @@ def create_app():
                 patched = False
                 # Try several known locations for telemetry/capture
                 # Try to locate Posthog or other telemetry implementations and
-                # replace their `capture` implementations with permissive no-ops.
+                # replace their capture implementations with permissive no-ops.
                 try:
                     import importlib
                     # Verbose flag (set CHROMA_VERBOSE=1 to enable telemetry debug prints)
@@ -212,8 +212,8 @@ def create_app():
                 print('ChromaDB health check failed:', _c_err_outer)
 
         if sql_ok and chroma_ok:
-            # Print success unconditionally (user requested a clear result)
-            print(f'Databases initialized OK: SQLAlchemy connected; ChromaDB connected ({ncols} collections)')
+                # Print a single concise success line when both DBs are connected
+                print(f'Databases initialized and connected: SQLAlchemy + ChromaDB ({ncols} collections)')
 
         return sql_ok, chroma_ok, ncols
 

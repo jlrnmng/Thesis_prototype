@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard – Hirely</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Montserrat', sans-serif;
+      background: #f9fbfa;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #a4ce89;
+      padding: 22px 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo img {
+      height: 45px;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+      gap: 20px;
+    }
+
+    .admin-card {
+      background: white;
+      border: 1px solid #e5f2ef;
+      border-radius: 8px;
+      padding: 20px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0px 2px 6px rgba(0,0,0,0.05);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .admin-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+
+    footer {
+      text-align: center;
+      padding: 18px;
+      background: #f3f9f7;
+      font-size: 14px;
+      color: #555;
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <img src="/static/hirely_logo.png" alt="Hirely Logo">
+    </div>
+    <nav>
+      <a href="/logout">Logout</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Admin Dashboard</h1>
+    <div class="admin-card" onclick="location.href='/post_job'">
+      <h2>Post a New Job</h2>
+      <p>Create and publish new job listings for candidates.</p>
+    </div>
+    <div class="admin-card" onclick="location.href='/manage_jobs'">
+      <h2>Manage Jobs</h2>
+      <p>Edit or delete existing job postings.</p>
+    </div>
+    <div class="admin-card" onclick="location.href='/view_applicants'">
+      <h2>View Applicants</h2>
+      <p>See and manage candidate applications.</p>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2025 Hirely. Admin Panel.
+  </footer>
+
+</body>
+</html>

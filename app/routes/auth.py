@@ -49,7 +49,6 @@ def register():
             email=email,
             phone=phone,
             address=address,
-            is_admin=bool(role_admin),
             resume=resume_filename
         )
         user.set_password(password)

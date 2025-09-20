@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hirely – Job Listings</title>
+  <title>User Dashboard – Hirely</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     body {
@@ -15,20 +15,13 @@
       min-height: 100vh;
     }
 
-    /* === Dashboard Header === */
     header {
-      background: #2eccb0;
-      color: #000000;
+      background: #a4ce89;
+      color: #000;
       padding: 22px 60px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-    }
-
-    .logo {
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
     }
 
     .logo img {
@@ -52,21 +45,50 @@
       text-decoration: underline;
     }
 
-    .signin-btn {
+    .profile-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .profile-btn {
       background: #16395f;
-      padding: 8px 20px;
-      border-radius: 20px;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
       color: white;
-      font-size: 14px;
-      font-weight: 600;
+      font-weight: bold;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: white;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.1);
+      z-index: 1;
+      border-radius: 6px;
+    }
+
+    .dropdown-content a {
+      color: #333;
+      padding: 12px 16px;
       text-decoration: none;
+      display: block;
     }
 
-    .signin-btn:hover {
-      background: #122c4d;
+    .dropdown-content a:hover {
+      background-color: #f1f1f1;
     }
 
-    /* === Main Layout === */
+    .profile-dropdown:hover .dropdown-content {
+      display: block;
+    }
+
     main {
       display: flex;
       justify-content: center;
@@ -90,7 +112,7 @@
     .jobs-list h2 {
       font-size: 18px;
       font-weight: 600;
-      margin: 0 0 18px;
+      margin-bottom: 18px;
       color: #2c3e50;
     }
 
@@ -107,22 +129,10 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
       transform: translateY(-1px);
     }
-    .job-card h3 {
-      margin: 0 0 4px;
-      font-size: 15px;
-      font-weight: 600;
-      color: #2c3e50;
-    }
-    .job-card p {
-      margin: 0;
-      font-size: 13px;
-      color: #555;
-    }
 
     .divider {
       width: 1px;
       background: #e1e1e1;
-      align-self: stretch;
     }
 
     .job-details {
@@ -131,19 +141,7 @@
       border: 1px solid #e5f2ef;
       border-radius: 6px;
       padding: 28px;
-      max-height: calc(100vh - 200px);
       overflow-y: auto;
-      line-height: 1.6;
-    }
-    .job-details h2 {
-      margin-top: 0;
-      font-size: 20px;
-      font-weight: 600;
-      color: #2c3e50;
-    }
-    .job-details p {
-      font-size: 14px;
-      color: #444;
     }
 
     footer {
@@ -158,7 +156,6 @@
 </head>
 <body>
 
-  <!-- Dashboard -->
   <header>
     <div class="logo">
       <img src="/static/hirely_logo.png" alt="Hirely Logo">
@@ -166,35 +163,37 @@
     <nav>
       <a href="#">Home</a>
       <a href="#">Jobs</a>
-      <a href="#">Employers</a>
-      <a href="/login" class="signin-btn">Sign In</a>
-      <a href="/admin_register">Employers/Post Job</a>
+      <a href="#">Matchmaked Jobs</a>
+      <div class="profile-dropdown">
+        <div class="profile-btn">U</div>
+        <div class="dropdown-content">
+          <a href="#">My Profile</a>
+          <a href="#">Settings</a>
+          <a href="/logout">Logout</a>
+        </div>
+      </div>
     </nav>
   </header>
 
-  <!-- Main Content -->
   <main>
     <div class="content-wrapper">
-      <!-- Jobs List -->
       <div class="jobs-list">
         <h2>Available Jobs</h2>
-        {% for job in jobs %}
-        <div class="job-card"
-             data-title="{{ job.role }}"
-             data-description="{{ job.description }}"
-             onclick="showJobDetails(this.dataset.title, this.dataset.description)">
-          <h3>{{ job.role }}</h3>
-          <p>{{ job.description[:60] }}...</p>
+        <div class="job-card" onclick="showJobDetails('Frontend Developer')">
+          <h3>Frontend Developer</h3>
+          <p>Build and maintain modern web interfaces.</p>
         </div>
-        {% endfor %}
+        <div class="job-card" onclick="showJobDetails('Backend Engineer')">
+          <h3>Backend Engineer</h3>
+          <p>Work on APIs and server-side logic.</p>
+        </div>
       </div>
 
       <div class="divider"></div>
 
-      <!-- Job Details -->
       <div class="job-details" id="jobDetails">
         <h2>Job Description</h2>
-        <p>Select a job from the list to view details here.</p>
+        <p>Select a job to view details here.</p>
       </div>
     </div>
   </main>
@@ -204,11 +203,12 @@
   </footer>
 
   <script>
-    function showJobDetails(title, description) {
+    function showJobDetails(title) {
       const details = document.getElementById("jobDetails");
       details.innerHTML = `
         <h2>${title}</h2>
-        <p>${description}</p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+        <p>Responsibilities include working with a team and building awesome products.</p>
       `;
     }
   </script>

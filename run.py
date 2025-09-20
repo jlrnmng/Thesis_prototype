@@ -36,74 +36,7 @@ with app.app_context():
     db.create_all()
 
 
-# -------------------------------
-# Health check for DBs
-# -------------------------------
-def check_databases(app):
-    """Check SQLAlchemy + ChromaDB connectivity status."""
-    sql_ok = False
-    chroma_ok = False
-    ncols = 0
-
-    # SQLAlchemy check
-    try:
-        with app.app_context():
-            db.session.execute(text('SELECT 1'))
-        sql_ok = True
-    except Exception as e:
-        print('SQLAlchemy connection: FAIL ->', e)
-
-    # ChromaDB check
-    try:
-        chroma_path = app.config.get('CHROMA_PATH')
-        if not chroma_path:
-            project_root = os.path.dirname(os.path.abspath(__file__))
-            candidates = [
-                os.path.join(project_root, 'chroma_storage'),
-                os.path.join(project_root, '..', 'chroma_storage'),
-                os.path.join(project_root, '..', '..', 'chroma_storage'),
-            ]
-            for c in candidates:
-                if os.path.exists(c):
-                    chroma_path = c
-                    break
-
-        if not chroma_path:
-            print('ChromaDB connection: SKIPPED (no path)')
-        else:
-            sqlite_file = os.path.join(chroma_path, 'chroma.sqlite3')
-            if not os.path.exists(sqlite_file):
-                print(f"ChromaDB connection: SKIPPED (file not found at {sqlite_file})")
-            else:
-                try:
-                    conn = sqlite3.connect(sqlite_file)
-                    cur = conn.cursor()
-                    cur.execute("PRAGMA table_info('collections')")
-                    cols = cur.fetchall()
-                    if not cols:
-                        print("ChromaDB connection: FAIL -> 'collections' table missing")
-                    else:
-                        try:
-                            cur.execute('SELECT COUNT(*) FROM collections')
-                            ncols = cur.fetchone()[0]
-                        except Exception:
-                            ncols = -1
-                        chroma_ok = True
-                    conn.close()
-                except Exception as e:
-                    print('ChromaDB connection: FAIL ->', e)
-    except Exception as e:
-        print('ChromaDB connection: FAIL ->', e)
-
-    # Final concise status
-    if sql_ok and chroma_ok:
-        print(f'Databases initialized OK: SQLAlchemy + ChromaDB ({ncols} collections)')
-    else:
-        if not sql_ok:
-            print('Databases status: SQLAlchemy NOT CONNECTED')
-        if not chroma_ok:
-            print('Databases status: ChromaDB NOT CONNECTED')
-
+# Deduplicated health-check defined earlier; keep single instance
 
 # -------------------------------
 # Routes
@@ -176,10 +109,63 @@ if __name__ == '__main__':
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
 
-    # Run DB health check
+    # Run DB health check and print a single concise status line
     try:
-        check_databases(app)
+        sql_ok = False
+        chroma_ok = False
+        ncols = 0
+
+        # SQLAlchemy quick check
+        try:
+            with app.app_context():
+                db.session.execute(text('SELECT 1'))
+            sql_ok = True
+        except Exception:
+            sql_ok = False
+
+        # ChromaDB quick check (inspect sqlite file without importing chromadb internals)
+        chroma_path = app.config.get('CHROMA_PATH')
+        if not chroma_path:
+            project_root = os.path.dirname(os.path.abspath(__file__))
+            candidates = [
+                os.path.join(project_root, 'chroma_storage'),
+                os.path.join(project_root, '..', 'chroma_storage'),
+                os.path.join(project_root, '..', '..', 'chroma_storage'),
+            ]
+            for c in candidates:
+                if os.path.exists(c):
+                    chroma_path = c
+                    break
+
+        if chroma_path:
+            sqlite_file = os.path.join(chroma_path, 'chroma.sqlite3')
+            if os.path.exists(sqlite_file):
+                try:
+                    conn = sqlite3.connect(sqlite_file)
+                    cur = conn.cursor()
+                    cur.execute("PRAGMA table_info('collections')")
+                    cols = cur.fetchall()
+                    if cols:
+                        try:
+                            cur.execute('SELECT COUNT(*) FROM collections')
+                            ncols = cur.fetchone()[0]
+                        except Exception:
+                            ncols = -1
+                        chroma_ok = True
+                    conn.close()
+                except Exception:
+                    chroma_ok = False
+
+        # Print one concise status line
+        if sql_ok and chroma_ok:
+            print(f'Databases initialized and connected: SQLAlchemy + ChromaDB ({ncols} collections)')
+        else:
+            parts = []
+            parts.append('SQLAlchemy: OK' if sql_ok else 'SQLAlchemy: FAIL')
+            parts.append(f'ChromaDB: OK ({ncols} collections)' if chroma_ok else 'ChromaDB: FAIL')
+            print('Databases status:', ' | '.join(parts))
     except Exception:
+        # Avoid failing startup for health-check reporting issues
         pass
 
     # Start server
