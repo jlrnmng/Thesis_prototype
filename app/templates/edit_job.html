@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Job – Hirely</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Montserrat', sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      color: #2c3e50;
+    }
+
+    header {
+      background: #2eccb0;
+      padding: 14px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .logo img {
+      height: 42px;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 600;
+      transition: opacity 0.2s ease;
+    }
+
+    nav a:hover {
+      opacity: 0.8;
+    }
+
+    main {
+      flex: 1;
+      padding: 40px 60px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+
+    .page-header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .delete-btn {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .delete-btn:hover {
+      background: #c0392b;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .card h2 {
+      margin: 0 0 20px;
+      font-size: 20px;
+      font-weight: 700;
+      color: #2c3e50;
+      border-bottom: 2px solid #2eccb0;
+      padding-bottom: 10px;
+    }
+
+    .flash-messages {
+      margin-bottom: 20px;
+      grid-column: span 2;
+    }
+
+    .flash-message {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .flash-success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .flash-error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px solid #e0f4ef;
+      font-size: 14px;
+      font-family: inherit;
+      background: #f9f9f9;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      border-color: #2eccb0;
+      background: white;
+      outline: none;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 200px;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .submit-btn {
+      flex: 1;
+      background-color: #2eccb0;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .submit-btn:hover {
+      background-color: #27b89f;
+    }
+
+    .cancel-btn {
+      flex: 1;
+      background-color: #e0e0e0;
+      color: #333;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cancel-btn:hover {
+      background-color: #d0d0d0;
+    }
+
+    .applicants-section {
+      grid-column: span 2;
+    }
+
+    .applicant-card {
+      background: #f9fbfa;
+      border: 1px solid #e5f2ef;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+    }
+
+    .applicant-card:hover {
+      box-shadow: 0 4px 12px rgba(46, 204, 176, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .applicant-info {
+      flex: 1;
+    }
+
+    .applicant-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2c3e50;
+      margin: 0 0 5px;
+    }
+
+    .applicant-email {
+      font-size: 14px;
+      color: #666;
+      margin: 0 0 8px;
+    }
+
+    .applicant-date {
+      font-size: 13px;
+      color: #999;
+    }
+
+    .match-score {
+      text-align: center;
+      margin-left: 20px;
+    }
+
+    .score-circle {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2eccb0 0%, #27b89f 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 auto 5px;
+    }
+
+    .score-label {
+      font-size: 12px;
+      color: #666;
+      font-weight: 600;
+    }
+
+    .view-resume-btn {
+      background: #16395f;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-left: 15px;
+    }
+
+    .view-resume-btn:hover {
+      background: #122c4d;
+    }
+
+    .no-applicants {
+      text-align: center;
+      color: #888;
+      padding: 40px;
+      font-size: 15px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 18px;
+      background: #f3f9f7;
+      font-size: 14px;
+      color: #555;
+      margin-top: auto;
+    }
+
+    @media (max-width: 1000px) {
+      main {
+        padding: 30px 20px;
+      }
+
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .applicants-section {
+        grid-column: span 1;
+      }
+
+      .applicant-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+
+      .match-score {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <img src="/static/hirely_logo.png" alt="Hirely Logo">
+    </div>
+    <nav>
+      <a href="/admin_dashboard">Dashboard</a>
+      <a href="/post_job">Post Job</a>
+      <a href="/logout">Logout</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="page-header">
+      <h1>Edit Job Posting</h1>
+      <form method="POST" action="/delete_job/{{ job.id }}" style="display: inline;">
+        <button type="submit" class="delete-btn" onclick="return confirm('Are you sure you want to delete this job posting?')">Delete Job</button>
+      </form>
+    </div>
+
+    <div class="content-grid">
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="flash-message flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <!-- Edit Job Form -->
+      <div class="card">
+        <h2>Job Details</h2>
+        <form method="POST" action="/edit_job/{{ job.id }}">
+          <div class="form-group">
+            <label for="role">Job Title / Role *</label>
+            <input type="text" id="role" name="role" value="{{ job.role }}" required>
+          </div>
+
+          <div class="form-group">
+            <label for="description">Job Description *</label>
+            <textarea id="description" name="description" required>{{ job.description }}</textarea>
+          </div>
+
+          <div class="button-group">
+            <button type="submit" class="submit-btn">Update Job</button>
+            <a href="/admin_dashboard" class="cancel-btn">Cancel</a>
+          </div>
+        </form>
+      </div>
+
+      <!-- Job Info Card -->
+      <div class="card">
+        <h2>Job Information</h2>
+        <div style="line-height: 1.8;">
+          <p><strong>Posted:</strong> {{ job.created_at.strftime('%B %d, %Y at %I:%M %p') if job.created_at else 'N/A' }}</p>
+          <p><strong>Status:</strong> 
+          <p><strong>Status:</strong>
+                {% if job.is_active %}
+                    <span style="color: #27ae98; font-weight: 600;">Active</span>
+                {% else %}
+                    <span style="color: #e74c3c; font-weight: 600;">Inactive</span>
+                {% endif %}
+                </p>
+
+
+          <p><strong>Total Applicants:</strong> {{ applications|length }}</p>
+        </div>
+      </div>
+
+      <!-- Applicants Section -->
+      <div class="card applicants-section">
+        <h2>Applicants (Ranked by Match Score)</h2>
+        {% if applications %}
+          {% for application in applications %}
+          <div class="applicant-card">
+            <div class="applicant-info">
+              <p class="applicant-name">{{ application.applicant.full_name }}</p>
+              <p class="applicant-email">📧 {{ application.applicant.email }}</p>
+              <p class="applicant-date">Applied: {{ application.submission_date.strftime('%b %d, %Y') if application.submission_date else 'N/A' }}</p>
+            </div>
+            <div class="match-score">
+              <div class="score-circle">{{ application.match_score }}%</div>
+              <div class="score-label">Match Score</div>
+            </div>
+            {% if application.applicant.resume %}
+            <button class="view-resume-btn" onclick="window.open('/view_resume/{{ application.applicant.id }}', '_blank')">View Resume</button>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="no-applicants">
+            No applicants yet. Share this job posting to attract candidates!
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2025 Hirely. Admin Panel.
+  </footer>
+
+</body>
+</html>

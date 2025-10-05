@@ -9,66 +9,176 @@
     body {
       margin: 0;
       font-family: 'Montserrat', sans-serif;
-      background: #f9fbfa;
+      background: #f0f2f5;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      color: #2c3e50;
     }
 
     header {
-      background: #a4ce89;
-      padding: 22px 60px;
+      background: #2eccb0;
+      padding: 14px 40px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      color: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
 
     .logo img {
-      height: 45px;
+      height: 42px;
     }
 
     nav {
       display: flex;
       align-items: center;
-      gap: 28px;
+      gap: 24px;
     }
 
     nav a {
       color: white;
       text-decoration: none;
       font-size: 15px;
-      font-weight: 500;
+      font-weight: 600;
+      transition: opacity 0.2s ease;
     }
 
     nav a:hover {
-      text-decoration: underline;
+      opacity: 0.8;
     }
 
     main {
       flex: 1;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 24px;
+      padding: 30px 60px;
+    }
+
+    .sidebar {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      padding: 40px;
-      gap: 20px;
+      gap: 18px;
     }
 
-    .admin-card {
+    .profile-card {
       background: white;
-      border: 1px solid #e5f2ef;
-      border-radius: 8px;
+      border-radius: 10px;
       padding: 20px;
-      max-width: 400px;
-      width: 100%;
       text-align: center;
-      box-shadow: 0px 2px 6px rgba(0,0,0,0.05);
-      cursor: pointer;
-      transition: transform 0.2s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
 
-    .admin-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin: 0 auto 10px;
+      background: #2eccb0;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 700;
+    }
+
+    .profile-card h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .profile-card p {
+      margin: 5px 0 0;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .menu-card {
+      background: white;
+      border-radius: 10px;
+      padding: 15px 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .menu-card ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .menu-card li {
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .menu-card li:last-child {
+      border: none;
+    }
+
+    .menu-card a {
+      color: #2c3e50;
+      text-decoration: none;
+      font-weight: 500;
+      display: block;
+    }
+
+    .menu-card a:hover {
+      color: #2eccb0;
+    }
+
+    .content {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .content h1 {
+      margin: 0 0 15px;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .job-table {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background: #f9fbfa;
+      font-weight: 700;
+      color: #2c3e50;
+    }
+
+    tbody tr {
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    tbody tr:hover {
+      background: #f8fdfc;
+    }
+
+    .no-jobs {
+      text-align: center;
+      color: #888;
+      padding: 30px;
     }
 
     footer {
@@ -79,6 +189,13 @@
       color: #555;
       margin-top: auto;
     }
+
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr;
+        padding: 20px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -88,23 +205,56 @@
       <img src="/static/hirely_logo.png" alt="Hirely Logo">
     </div>
     <nav>
+      <a href="/admin_dashboard">Dashboard</a>
+      <a href="/post_job">Post Job</a>
       <a href="/logout">Logout</a>
     </nav>
   </header>
 
   <main>
-    <h1>Admin Dashboard</h1>
-    <div class="admin-card" onclick="location.href='/post_job'">
-      <h2>Post a New Job</h2>
-      <p>Create and publish new job listings for candidates.</p>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="profile-card">
+        <div class="profile-avatar">{{ user.first_name[0] }}{{ user.last_name[0] }}</div>
+        <h2>{{ user.first_name }} {{ user.last_name }}</h2>
+        <p>Administrator</p>
+      </div>
+      <div class="menu-card">
+        <ul>
+          <li><a href="/post_job">➕ Post a Job</a></li>
+          <li><a href="/admin_dashboard">📋 Jobs Posted</a></li>
+          <li><a href="/reports">📊 Reports</a></li>
+        </ul>
+      </div>
     </div>
-    <div class="admin-card" onclick="location.href='/manage_jobs'">
-      <h2>Manage Jobs</h2>
-      <p>Edit or delete existing job postings.</p>
-    </div>
-    <div class="admin-card" onclick="location.href='/view_applicants'">
-      <h2>View Applicants</h2>
-      <p>See and manage candidate applications.</p>
+
+    <!-- MAIN CONTENT -->
+    <div class="content">
+      <h1>Jobs You Posted</h1>
+      <div class="job-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Job Title</th>
+              <th>Description</th>
+              <th>Date Posted</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for job in jobs %}
+            <tr onclick="window.location.href='/edit_job/{{ job.id }}'">
+              <td><strong>{{ job.role }}</strong></td>
+              <td>{{ job.description[:100] }}{% if job.description|length > 100 %}...{% endif %}</td>
+              <td>{{ job.created_at.strftime('%b %d, %Y') if job.created_at else 'N/A' }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="3" class="no-jobs">No jobs posted yet. <a href="/post_job" style="color: #2eccb0;">Post your first job</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </main>
 

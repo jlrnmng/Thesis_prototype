@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Dashboard – Hirely</title>
+  <title>Hirely – User Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     body {
@@ -15,13 +15,15 @@
       min-height: 100vh;
     }
 
+    /* === Dashboard Header === */
     header {
-      background: #a4ce89;
-      color: #000;
+      background: #2eccb0;
+      color: #ffffff;
       padding: 22px 60px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
     .logo img {
@@ -39,39 +41,50 @@
       text-decoration: none;
       font-size: 15px;
       font-weight: 500;
+      transition: opacity 0.2s;
     }
 
     nav a:hover {
-      text-decoration: underline;
+      opacity: 0.85;
     }
 
-    .profile-dropdown {
-      position: relative;
-      display: inline-block;
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
     }
 
-    .profile-btn {
-      background: #16395f;
-      border-radius: 50%;
+    .user-avatar {
       width: 40px;
       height: 40px;
+      border-radius: 50%;
+      background: #fff;
+      color: #2eccb0;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
       cursor: pointer;
-      color: white;
-      font-weight: bold;
+      user-select: none;
+    }
+
+    /* === Dropdown Styles === */
+    .dropdown {
+      position: relative;
+      display: inline-block;
     }
 
     .dropdown-content {
       display: none;
       position: absolute;
       right: 0;
-      background-color: white;
+      top: 50px;
+      background: white;
       min-width: 160px;
-      box-shadow: 0px 8px 16px rgba(0,0,0,0.1);
-      z-index: 1;
       border-radius: 6px;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.1);
+      z-index: 10;
     }
 
     .dropdown-content a {
@@ -79,16 +92,34 @@
       padding: 12px 16px;
       text-decoration: none;
       display: block;
+      font-size: 14px;
     }
 
     .dropdown-content a:hover {
-      background-color: #f1f1f1;
+      background: #f5f5f5;
     }
 
-    .profile-dropdown:hover .dropdown-content {
+    /* Show menu when active */
+    .dropdown.active .dropdown-content {
       display: block;
     }
 
+    .logout-btn {
+      background: #16395f;
+      padding: 8px 20px;
+      border-radius: 20px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: #122c4d;
+    }
+
+    /* === Main Layout === */
     main {
       display: flex;
       justify-content: center;
@@ -112,7 +143,7 @@
     .jobs-list h2 {
       font-size: 18px;
       font-weight: 600;
-      margin-bottom: 18px;
+      margin: 0 0 18px;
       color: #2c3e50;
     }
 
@@ -125,14 +156,40 @@
       cursor: pointer;
       transition: box-shadow 0.2s ease, transform 0.1s ease;
     }
+    
     .job-card:hover {
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
       transform: translateY(-1px);
+    }
+    
+    .job-card h3 {
+      margin: 0 0 4px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    
+    .job-card p {
+      margin: 0;
+      font-size: 13px;
+      color: #555;
+    }
+
+    .match-badge {
+      display: inline-block;
+      background: #2eccb0;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 8px;
     }
 
     .divider {
       width: 1px;
       background: #e1e1e1;
+      align-self: stretch;
     }
 
     .job-details {
@@ -141,7 +198,58 @@
       border: 1px solid #e5f2ef;
       border-radius: 6px;
       padding: 28px;
+      max-height: calc(100vh - 200px);
       overflow-y: auto;
+      line-height: 1.6;
+    }
+    
+    .job-details h2 {
+      margin-top: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    
+    .job-details p {
+      font-size: 14px;
+      color: #444;
+    }
+
+    .match-score-display {
+      background: linear-gradient(135deg, #2eccb0 0%, #27b89f 100%);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .match-score-display .score {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .match-score-display .label {
+      font-size: 14px;
+      opacity: 0.95;
+    }
+
+    .apply-btn {
+      background-color: #2eccb0;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 28px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.2s;
+    }
+
+    .apply-btn:hover {
+      background-color: #27b89f;
     }
 
     footer {
@@ -152,65 +260,149 @@
       color: #555;
       margin-top: auto;
     }
+
+    /* === Mobile Responsive === */
+    @media (max-width: 900px) {
+      header, main {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+
+      .content-wrapper {
+        flex-direction: column;
+      }
+
+      .jobs-list {
+        max-width: 100%;
+      }
+
+      .job-details {
+        max-height: none;
+      }
+    }
   </style>
 </head>
 <body>
 
+  <!-- Dashboard Header -->
   <header>
     <div class="logo">
       <img src="/static/hirely_logo.png" alt="Hirely Logo">
     </div>
     <nav>
-      <a href="#">Home</a>
-      <a href="#">Jobs</a>
-      <a href="#">Matchmaked Jobs</a>
-      <div class="profile-dropdown">
-        <div class="profile-btn">U</div>
-        <div class="dropdown-content">
-          <a href="#">My Profile</a>
-          <a href="#">Settings</a>
-          <a href="/logout">Logout</a>
+      <div class="user-info">
+        <span>{{ user.first_name }} {{ user.last_name }}</span>
+
+        <!-- Avatar Dropdown -->
+        <div class="dropdown" id="userDropdown">
+          <div class="user-avatar" id="avatarBtn">
+            {{ user.first_name[0] }}{{ user.last_name[0] }}
+          </div>
+          <div class="dropdown-content">
+            <a href="/profile">Profile</a>
+            <a href="/settings">Settings</a>
+            <a href="/logout">Logout</a>
+          </div>
         </div>
       </div>
     </nav>
   </header>
 
+  <!-- Main Content -->
   <main>
     <div class="content-wrapper">
+      <!-- Jobs List -->
       <div class="jobs-list">
-        <h2>Available Jobs</h2>
-        <div class="job-card" onclick="showJobDetails('Frontend Developer')">
-          <h3>Frontend Developer</h3>
-          <p>Build and maintain modern web interfaces.</p>
+        <h2>Recommended Jobs for You</h2>
+        {% for job in jobs %}
+        <div class="job-card"
+             data-id="{{ job.id }}"
+             data-title="{{ job.role }}"
+             data-description="{{ job.description }}"
+             data-match="{{ job.match_score if job.match_score else 0 }}"
+             onclick="showJobDetails(this.dataset.id, this.dataset.title, this.dataset.description, this.dataset.match)">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <h3 style="margin: 0;">{{ job.role }}</h3>
+            {% if job.match_score and job.match_score > 0 %}
+            <span class="match-badge">{{ job.match_score|int }}% Match</span>
+            {% endif %}
+          </div>
+          <p>{{ job.description[:80] }}...</p>
         </div>
-        <div class="job-card" onclick="showJobDetails('Backend Engineer')">
-          <h3>Backend Engineer</h3>
-          <p>Work on APIs and server-side logic.</p>
-        </div>
+        {% endfor %}
       </div>
 
       <div class="divider"></div>
 
+      <!-- Job Details -->
       <div class="job-details" id="jobDetails">
-        <h2>Job Description</h2>
-        <p>Select a job to view details here.</p>
+        <h2>Select a Job</h2>
+        <p>Click on any job from the list to view full details and apply.</p>
       </div>
     </div>
   </main>
 
   <footer>
-    &copy; 2025 Hirely. All rights reserved.
+    &copy; 2025 Hirely. All rights reserved. | Matching talent with opportunity
   </footer>
 
   <script>
-    function showJobDetails(title) {
+    function showJobDetails(jobId, title, description, matchScore) {
       const details = document.getElementById("jobDetails");
+      
+      let matchScoreHTML = '';
+      if (matchScore && matchScore > 0) {
+        matchScoreHTML = `
+          <div class="match-score-display">
+            <div class="score">${matchScore}%</div>
+            <div class="label">Match Score</div>
+          </div>
+        `;
+      }
+      
       details.innerHTML = `
+        ${matchScoreHTML}
         <h2>${title}</h2>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-        <p>Responsibilities include working with a team and building awesome products.</p>
+        <p>${description}</p>
+        <button class="apply-btn" onclick="applyToJob(${jobId})">Apply Now</button>
       `;
     }
+
+    function applyToJob(jobId) {
+      fetch('/apply/' + jobId, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert('Application submitted successfully!');
+        } else {
+          alert('Error: ' + data.error);
+        }
+      })
+      .catch(error => {
+        alert('An error occurred. Please try again.');
+        console.error('Error:', error);
+      });
+    }
+
+    // === Avatar Dropdown Toggle ===
+    const dropdown = document.getElementById("userDropdown");
+    const avatarBtn = document.getElementById("avatarBtn");
+
+    avatarBtn.addEventListener("click", () => {
+      dropdown.classList.toggle("active");
+    });
+
+    // Close dropdown if clicked outside
+    document.addEventListener("click", (event) => {
+      if (!dropdown.contains(event.target) && event.target !== avatarBtn) {
+        dropdown.classList.remove("active");
+      }
+    });
   </script>
 
 </body>
