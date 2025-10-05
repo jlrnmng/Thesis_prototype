@@ -32,59 +32,42 @@ def check_databases(app):
         with app.app_context():
             db.session.execute(text('SELECT 1'))
         sql_ok = True
+        print('SQLAlchemy connection: OK')
     except Exception as e:
         print('SQLAlchemy connection: FAIL ->', e)
 
     # ChromaDB check
     try:
-        chroma_path = app.config.get('CHROMA_PATH')
-        if not chroma_path:
-            project_root = os.path.dirname(os.path.abspath(__file__))
-            candidates = [
-                os.path.join(project_root, 'chroma_storage'),
-                os.path.join(project_root, '..', 'chroma_storage'),
-                os.path.join(project_root, '..', '..', 'chroma_storage'),
-            ]
-            for c in candidates:
-                if os.path.exists(c):
-                    chroma_path = c
-                    break
-
-        if not chroma_path:
-            print('ChromaDB connection: SKIPPED (no path)')
-        else:
-            sqlite_file = os.path.join(chroma_path, 'chroma.sqlite3')
-            if not os.path.exists(sqlite_file):
-                print(f"ChromaDB connection: SKIPPED (file not found at {sqlite_file})")
-            else:
-                try:
-                    conn = sqlite3.connect(sqlite_file)
-                    cur = conn.cursor()
-                    cur.execute("PRAGMA table_info('collections')")
-                    cols = cur.fetchall()
-                    if not cols:
-                        print("ChromaDB connection: FAIL -> 'collections' table missing")
-                    else:
-                        try:
-                            cur.execute('SELECT COUNT(*) FROM collections')
-                            ncols = cur.fetchone()[0]
-                        except Exception:
-                            ncols = -1
-                        chroma_ok = True
-                    conn.close()
-                except Exception as e:
-                    print('ChromaDB connection: FAIL ->', e)
+        # Try to get collections through the matching service
+        from matching_service import get_matching_service
+        ms = get_matching_service()
+        
+        # Check if collections are accessible
+        resumes_count = ms.resumes_collection.count() if ms.resumes_collection else 0
+        jobs_count = ms.jobs_collection.count() if ms.jobs_collection else 0
+        total_docs = resumes_count + jobs_count
+        
+        print(f"ChromaDB connection: OK")
+        print(f"ChromaDB collections:")
+        print(f"- Resumes: {resumes_count} documents")
+        print(f"- Jobs: {jobs_count} documents")
+        chroma_ok = True
     except Exception as e:
-        print('ChromaDB connection: FAIL ->', e)
+        print(f'ChromaDB connection: FAIL -> {str(e)}')
 
-    # Final concise status
-    if sql_ok and chroma_ok:
-        print(f'Databases initialized OK: SQLAlchemy + ChromaDB ({ncols} collections)')
+    # Final status
+    print('\nDatabase Status Summary:')
+    print('------------------------')
+    if sql_ok:
+        print('✓ SQLite Database: Connected')
     else:
-        if not sql_ok:
-            print('Databases status: SQLAlchemy NOT CONNECTED')
-        if not chroma_ok:
-            print('Databases status: ChromaDB NOT CONNECTED')
+        print('✗ SQLite Database: NOT CONNECTED')
+        
+    if chroma_ok:
+        print(f'✓ ChromaDB: Connected ({total_docs} total documents)')
+    else:
+        print('✗ ChromaDB: NOT CONNECTED')
+    print('------------------------')
 
 
 # -------------------------------
@@ -249,7 +232,7 @@ def user_dashboard():
         try:
             # Get user's resume text (you'll need to extract from file)
             # For now using a placeholder - implement proper extraction
-            from resume_extractor import extract_resume_text
+            from app.utils.resume_extractor import extract_resume_text
             
             upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
             resume_path = os.path.join(upload_folder, user.resume)
@@ -571,7 +554,7 @@ def get_job_matches():
         return {'success': False, 'error': 'Matching service not available'}, 503
     
     try:
-        from resume_extractor import extract_resume_text
+        from app.utils.resume_extractor import extract_resume_text
         
         upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
         resume_path = os.path.join(upload_folder, user.resume)
@@ -634,9 +617,23 @@ def apply_to_job(job_id):
         return {'success': False, 'error': 'You have already applied to this job'}, 400
     
     try:
-        # Get resume text (you'll need to extract this from the uploaded resume file)
-        # For now, using a placeholder - implement proper resume text extraction
-        resume_text = f"Resume for {user.full_name}"  # Replace with actual extraction
+        # Prefer extracting resume from saved user file if available
+        resume_text = f"Resume for {user.full_name}"
+        if user.resume:
+            try:
+                from app.utils.resume_extractor import extract_resume_text
+                upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
+                resume_path = os.path.join(upload_folder, user.resume)
+                if os.path.exists(resume_path):
+                    extracted = extract_resume_text(resume_path)
+                    if extracted:
+                        resume_text = extracted
+                    else:
+                        print(f"DEBUG: Extraction returned empty for {resume_path}")
+                else:
+                    print(f"DEBUG: Resume file not found at {resume_path}")
+            except Exception as e:
+                print(f"WARNING: Could not extract saved resume: {e}")
         
         # Create application
         new_application = Application(

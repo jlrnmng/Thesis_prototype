@@ -1,4 +1,64 @@
+import os
+# Ensure ChromaDB telemetry is disabled as early as possible
+os.environ.setdefault('CHROMA_DISABLE_TELEMETRY', '1')
+import sys
+import types
+
+# Provide a lightweight 'posthog' stub early so chromadb telemetry imports
+# do not fail or raise on mismatched capture signatures. This prevents errors
+# like "Posthog.capture: `kw` is not present." by providing a tolerant
+# capture implementation that accepts any args/kwargs.
+if 'posthog' not in sys.modules:
+    _posthog_stub = types.SimpleNamespace()
+    def _ph_capture(*args, **kwargs):
+        # no-op capture; tolerate any signature
+        return None
+    _posthog_stub.capture = _ph_capture
+    sys.modules['posthog'] = _posthog_stub
+
 from flask import Flask
+
+# Attempt to aggressively disable/patch chromadb telemetry modules at import time.
+# Some chromadb builds call into posthog.capture even when env vars are set; patch
+# common module paths so telemetry no-ops instead of raising.
+try:
+    import importlib
+    candidates = [
+        'chromadb.telemetry',
+        'chromadb.telemetry.product',
+        'chromadb.telemetry.product.posthog',
+        'chromadb.telemetry.product.posthog_posthog',
+    ]
+    for mod_name in candidates:
+        try:
+            mod = importlib.import_module(mod_name)
+        except Exception:
+            continue
+
+        # patch top-level capture function
+        if hasattr(mod, 'capture'):
+            try:
+                setattr(mod, 'capture', lambda *a, **kw: None)
+            except Exception:
+                pass
+
+        # patch any classes with capture method
+        for attr_name in dir(mod):
+            try:
+                attr = getattr(mod, attr_name)
+            except Exception:
+                continue
+            try:
+                if isinstance(attr, type) and hasattr(attr, 'capture'):
+                    try:
+                        setattr(attr, 'capture', lambda self, *a, **kw: None)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+except Exception:
+    # if patching fails, continue; later code will attempt more targeted patches
+    pass
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from sentence_transformers import SentenceTransformer
@@ -20,6 +80,9 @@ logger = logging.getLogger(__name__)
 def create_app():
     app = Flask(__name__, template_folder='templates', static_folder='static')
     
+    # Ensure ChromaDB telemetry is disabled before importing chromadb anywhere
+    os.environ.setdefault('CHROMA_DISABLE_TELEMETRY', '1')
+
     from instance.config import Config
     app.config.from_object(Config)
 

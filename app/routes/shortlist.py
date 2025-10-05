@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from app.models import db, Application, Job, User
 from rank_bm25 import BM25Okapi
 import numpy as np
@@ -37,29 +37,34 @@ def get_shortlist(job_id):
         # Get target job
         target_job = Job.query.get_or_404(job_id)
 
-        # Get all applications in same cluster
-        applications = Application.query.filter_by(cluster_id=target_job.cluster_id).all()
+        # Get all applications
+        applications = Application.query.filter(
+            Application.resume_text.isnot(None),
+            Application.resume_text != '',
+            ~Application.resume_text.like('Resume for %')
+        ).all()
 
         if not applications:
-            return jsonify({'message': 'No applications found for this job cluster'}), 404
+            return jsonify({'message': 'No applications found with resume text'}), 404
 
-        # Prepare corpus of resumes
-        corpus = [app.resume_text or "" for app in applications]
-        tokenized_corpus = [doc.lower().split() for doc in corpus]
-
-        # Build BM25 index on resumes
-        bm25 = BM25Okapi(tokenized_corpus)
-
-        # Query = job description
-        tokenized_query = (target_job.description or "").lower().split()
-
-        # Score resumes against job description
-        doc_scores = bm25.get_scores(tokenized_query)
-
-        # Top 5 applications
-        top_indices = np.argsort(doc_scores)[::-1][:5]
-        top_applications = [applications[i] for i in top_indices]
-        top_scores = [doc_scores[i] for i in top_indices]
+        # Use matching service for improved hybrid scoring
+        from matching_service import get_matching_service
+        ms = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
+        
+        # Score applications against job using hybrid scoring (70% cosine + 30% BM25)
+        rankings = ms.rank_applicants_for_job(
+            job_description=target_job.description,
+            job_role=target_job.role,
+            applications=applications
+        )
+        
+        # Get top 5 matches
+        top_matches = rankings[:5]
+        
+        # Map application IDs to full application objects and scores
+        app_map = {app.id: app for app in applications}
+        top_applications = [app_map[app_id] for app_id, _ in top_matches]
+        top_scores = [score for _, score in top_matches]
 
         # Build response
         results = []

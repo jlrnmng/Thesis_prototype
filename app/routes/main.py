@@ -13,11 +13,11 @@ except ImportError:
     print("WARNING: Matching service not available")
 
 try:
-    from resume_extractor import extract_resume_text
+    from app.utils.resume_extractor import extract_resume_text
     RESUME_EXTRACTION_ENABLED = True
-except ImportError:
+except Exception as e:
     RESUME_EXTRACTION_ENABLED = False
-    print("WARNING: Resume extractor not available")
+    print("WARNING: Resume extractor not available:", repr(e))
 
 main_bp = Blueprint('main', __name__)
 

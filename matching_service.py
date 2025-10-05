@@ -2,6 +2,7 @@
 Matching service for ranking applicants against job descriptions
 Uses SentenceTransformer embeddings and hybrid scoring (70% cosine + 30% BM25)
 """
+import warnings
 import chromadb
 from chromadb.utils import embedding_functions
 from sentence_transformers import SentenceTransformer
@@ -11,12 +12,20 @@ import numpy as np
 import os
 from typing import List, Tuple, Dict
 
+# Suppress ChromaDB PersistentClient warning since we're using an older version intentionally
+warnings.filterwarnings('ignore', message='.*has no attribute.*PersistentClient.*')
+
 class MatchingService:
     def __init__(self, chroma_path='chroma_storage'):
         """Initialize matching service"""
         self.chroma_path = chroma_path
         self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-        self.client = chromadb.PersistentClient(path=chroma_path)
+        
+        # Use older ChromaDB API
+        self.client = chromadb.Client(chromadb.config.Settings(
+            chroma_db_impl="duckdb+parquet",
+            persist_directory=chroma_path
+        ))
         
         self.embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
             model_name="all-MiniLM-L6-v2"
@@ -54,8 +63,44 @@ class MatchingService:
             )
             return True
         except Exception as e:
-            print(f"Error adding resume to ChromaDB: {e}")
-            return False
+            # Avoid printing verbose telemetry errors (Posthog signature mismatches)
+            # which surface from chromadb's telemetry. Provide a concise warning
+            # and attempt a retry with telemetry disabled.
+            err_str = str(e)
+            if 'Posthog.capture' in err_str or 'posthog' in err_str.lower():
+                print("Warning: ChromaDB telemetry error while adding resume (suppressed details)")
+            else:
+                print(f"Error adding resume to ChromaDB (first attempt): {err_str}")
+            try:
+                import os
+                os.environ.setdefault('CHROMA_DISABLE_TELEMETRY', '1')
+                # Recreate client and collections with telemetry disabled and retry
+                try:
+                    self.client = chromadb.PersistentClient(path=self.chroma_path)
+                    self.resumes_collection = self.client.get_collection(
+                        name="resumes",
+                        embedding_function=self.embedding_function
+                    )
+                except Exception:
+                    # If get_collection fails try create_collection
+                    self.resumes_collection = self.client.create_collection(
+                        name="resumes",
+                        embedding_function=self.embedding_function
+                    )
+
+                self.resumes_collection.upsert(
+                    documents=[resume_text],
+                    ids=[f"user_{user_id}"],
+                    metadatas=[{"user_id": user_id}]
+                )
+                return True
+            except Exception as e2:
+                err2 = str(e2)
+                if 'Posthog.capture' in err2 or 'posthog' in err2.lower():
+                    print("Warning: ChromaDB telemetry error on retry (suppressed details)")
+                else:
+                    print(f"Error adding resume to ChromaDB (retry): {err2}")
+                return False
     
     def add_job_to_db(self, job_id: int, job_description: str, job_role: str):
         """Add job to ChromaDB"""

@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify, session, current_app
 from app.models import db, Application, Job
 from rank_bm25 import BM25Okapi
 import numpy as np
@@ -34,22 +34,18 @@ def get_job_matches():
 
         # Get all active jobs
         jobs = Job.query.filter_by(is_active=True).all()
-        job_descriptions = [f"{job.role} {job.description}" for job in jobs]
-
-        # Create BM25 index for jobs
-        tokenized_corpus = [desc.lower().split() for desc in job_descriptions]
-        bm25 = BM25Okapi(tokenized_corpus)
-
-        # Tokenize resume
-        tokenized_resume = user_resume_text.lower().split()
-
-        # Get scores for all jobs
-        doc_scores = bm25.get_scores(tokenized_resume)
-
-        # Get top 3 job matches
-        top_indices = np.argsort(doc_scores)[::-1][:3]
-        top_jobs = [jobs[i] for i in top_indices]
-        top_scores = [doc_scores[i] for i in top_indices]
+        
+        # Use matching service for improved hybrid scoring
+        from matching_service import get_matching_service
+        ms = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
+        
+        # Get top 3 job matches using hybrid scoring (70% cosine + 30% BM25)
+        top_matches = ms.get_top_jobs_for_resume(user_resume_text, jobs, top_n=3)
+        
+        # Map job IDs to full job objects
+        job_map = {job.id: job for job in jobs}
+        top_jobs = [job_map[job_id] for job_id, _ in top_matches]
+        top_scores = [score for _, score in top_matches]
 
         # Prepare response
         results = []
@@ -89,61 +85,83 @@ def explain_matchmaking(job_id):
 
         # Get the job
         job = Job.query.get_or_404(job_id)
-        job_description = f"{job.role} {job.description}" or ""
+        
+        # Use matching service for improved hybrid scoring
+        from matching_service import get_matching_service
+        ms = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
+        
+        # Get similarity scores using both cosine and BM25
+        job_desc = f"{job.role} {job.description}"
+        cosine_score = ms._get_cosine_similarity_scores(user_resume_text, [job_desc])[0]
+        bm25_score = ms._get_bm25_scores(user_resume_text, [job_desc])[0]
+        
+        # Normalize scores
+        cosine_norm = ms._normalize_scores([cosine_score])[0]
+        bm25_norm = ms._normalize_scores([bm25_score])[0]
+        
+        # Calculate final hybrid score (70% cosine + 30% BM25)
+        final_score = (0.7 * cosine_norm + 0.3 * bm25_norm) * 100
 
-        # Lowercase tokenization
-        tokenized_job = job_description.lower().split()
-        tokenized_resume = user_resume_text.lower().split()
-
-        # Use BM25 on single job doc
-        bm25 = BM25Okapi([tokenized_job])
-
-        # Overall score of resume vs job
-        overall_score = float(bm25.get_scores(tokenized_resume)[0])
-
-        # Compute per-term contributions
-        term_scores = {}
-        for term in set(tokenized_resume):
+        # Get key terms from both documents
+        resume_terms = set(user_resume_text.lower().split())
+        job_terms = set(job_desc.lower().split())
+        
+        # Find matching terms
+        matching_terms = resume_terms.intersection(job_terms)
+        formatted_terms = []
+        
+        # Analyze each matching term
+        for term in matching_terms:
             if len(term) < 2:
                 continue
-            try:
-                score = float(bm25.get_scores([term])[0])
-            except Exception:
-                score = 0.0
-            if score > 0 and term in " ".join(tokenized_job):
-                term_scores[term] = score
-
-        # Pick top 10 terms
-        top_n = 10
-        top_terms = heapq.nlargest(top_n, term_scores.items(), key=lambda x: x[1])
-        formatted_terms = []
-        for term, score in top_terms:
-            resume_count = tokenized_resume.count(term)
-            job_count = tokenized_job.count(term)
-            snippet = _get_snippet(job_description, term)
+                
+            # Get term context
+            resume_snippet = _get_snippet(user_resume_text, term)
+            job_snippet = _get_snippet(job_desc, term)
+            
+            # Count occurrences
+            resume_count = user_resume_text.lower().count(term)
+            job_count = job_desc.lower().count(term)
+            
             formatted_terms.append({
                 'term': term,
-                'contribution': float(score),
+                'resume_context': resume_snippet,
+                'job_context': job_snippet,
                 'resume_count': resume_count,
-                'job_count': job_count,
-                'job_snippet': snippet
+                'job_count': job_count
             })
 
-        # Coverage: percent of unique resume tokens found in job doc
-        matched_tokens = sum(1 for t in set(tokenized_resume) if t in tokenized_job)
-        token_coverage = matched_tokens / max(1, len(set(tokenized_resume)))
+        # Calculate coverage metrics
+        resume_token_count = len(resume_terms)
+        matching_token_count = len(matching_terms)
+        coverage = matching_token_count / max(1, resume_token_count)
+        
+        # Generate summary insights
+        level = "Strong" if final_score > 75 else "Good" if final_score > 50 else "Moderate" if final_score > 25 else "Limited"
+        insights = [
+            f"{level} match with an overall score of {final_score:.1f}%",
+            f"Found {matching_token_count} matching terms between your resume and the job description",
+            f"Your resume covers {coverage*100:.1f}% of the key terms in the job posting",
+            f"Semantic similarity score: {cosine_norm*100:.1f}%",
+            f"Keyword matching score: {bm25_norm*100:.1f}%"
+        ]
 
         return jsonify({
             'job_id': job.id,
             'job_role': job.role,
-            'overall_score': overall_score,
-            'top_contributing_terms': formatted_terms,
-            'token_coverage': round(token_coverage, 3),
-            'explanation': (
-                "Top terms from your resume that contribute most to the match are listed in "
-                "'top_contributing_terms' with per-term contribution, counts, and a short job snippet "
-                "showing context."
-            )
+            'scores': {
+                'overall': round(final_score, 1),
+                'semantic_similarity': round(cosine_norm * 100, 1),
+                'keyword_matching': round(bm25_norm * 100, 1)
+            },
+            'matching_terms': formatted_terms[:10],  # Top 10 matching terms
+            'coverage': {
+                'matching_terms': matching_token_count,
+                'resume_terms': resume_token_count,
+                'percentage': round(coverage * 100, 1)
+            },
+            'insights': insights,
+            'recommendation': _generate_recommendation_reasoning(final_score/100, matching_token_count)
         }), 200
 
     except Exception as e:

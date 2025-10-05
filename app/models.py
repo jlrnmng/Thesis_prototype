@@ -68,6 +68,18 @@ class User(db.Model):
     def __repr__(self):
         return f'<User {self.full_name} ({self.email})>'
 
+    @property
+    def full_name(self):
+        """Compose and return the user's full name.
+
+        Format: First Middle Last (middle omitted if not set).
+        """
+        parts = [self.first_name]
+        if self.middle_name:
+            parts.append(self.middle_name)
+        parts.append(self.last_name)
+        return " ".join([p for p in parts if p])
+
 
 class Job(db.Model):
     __tablename__ = 'jobs'
