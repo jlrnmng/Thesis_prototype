@@ -1,8 +1,9 @@
 """
 Main routes for HTML pages with AI matching integration
 """
-from flask import Blueprint, render_template, request, session, redirect, flash, jsonify, send_file, current_app
+from flask import Blueprint, render_template, request, session, redirect, flash, jsonify, send_file, current_app, make_response
 from app.models import Job, User, Application, db
+from app.utils.security import secure_route, session_security_check, log_security_event
 import os
 
 try:
@@ -48,6 +49,7 @@ def admin_register_page():
 
 
 @main_bp.route('/user_dashboard')
+@secure_route
 def user_dashboard():
     """User dashboard with AI job recommendations"""
     user_id = session.get('user_id')
@@ -121,6 +123,7 @@ def user_dashboard():
 
 
 @main_bp.route('/admin_dashboard')
+@secure_route
 def admin_dashboard():
     """Admin dashboard"""
     user_id = session.get('user_id')
@@ -147,6 +150,7 @@ def admin_dashboard():
 
 
 @main_bp.route('/post_job', methods=['GET', 'POST'])
+@secure_route
 def post_job():
     """Post new job"""
     user_id = session.get('user_id')
@@ -200,6 +204,7 @@ def post_job():
 
 
 @main_bp.route('/edit_job/<int:job_id>', methods=['GET', 'POST'])
+@secure_route
 def edit_job(job_id):
     """Edit job and view ranked applicants"""
     user_id = session.get('user_id')
@@ -276,6 +281,7 @@ def edit_job(job_id):
 
 
 @main_bp.route('/delete_job/<int:job_id>', methods=['POST'])
+@secure_route
 def delete_job(job_id):
     """Delete job"""
     user_id = session.get('user_id')
@@ -308,6 +314,7 @@ def delete_job(job_id):
 
 
 @main_bp.route('/view_resume/<int:user_id>')
+@secure_route
 def view_resume(user_id):
     """View resume"""
     admin_id = session.get('user_id')
@@ -350,13 +357,41 @@ def view_resume(user_id):
 
 @main_bp.route('/logout')
 def logout():
-    """Logout"""
+    """Enhanced logout with security measures"""
+    
+    # Get user info for logging before clearing session
+    user_id = session.get('user_id')
+    is_admin = session.get('is_admin')
+    user_type = "Admin" if is_admin else "User"
+    
+    # Clear all session data
     session.clear()
+    
+    # Force session to be deleted on client
+    session.permanent = False
+    
+    # Log the logout event for security audit
+    if user_id:
+        print(f"SECURITY LOG: {user_type} ID {user_id} logged out successfully (via blueprint)")
+    
     flash('You have been logged out successfully.', 'success')
-    return redirect('/')
+    
+    # Create response with security headers
+    response = make_response(redirect('/'))
+    
+    # Add security headers to prevent caching
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    
+    # Clear any authentication cookies
+    response.set_cookie('session', '', expires=0, secure=True, httponly=True, samesite='Strict')
+    
+    return response
 
 
 @main_bp.route('/apply/<int:job_id>', methods=['POST'])
+@secure_route
 def apply_to_job(job_id):
     """Apply to job"""
     user_id = session.get('user_id')

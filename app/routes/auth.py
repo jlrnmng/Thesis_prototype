@@ -255,8 +255,33 @@ def api_login():
 
 @auth_bp.route('/api/logout', methods=['POST'])
 def api_logout():
+    # Get user info for logging before clearing session
+    user_id = session.get('user_id')
+    is_admin = session.get('is_admin')
+    user_type = "Admin" if is_admin else "User"
+    
+    # Clear all session data
     session.clear()
-    return jsonify({'message': 'Logout successful'}), 200
+    
+    # Force session to be deleted on client
+    session.permanent = False
+    
+    # Log the logout event for security audit
+    if user_id:
+        print(f"SECURITY LOG: {user_type} ID {user_id} logged out successfully (via API)")
+    
+    # Create response with security headers
+    response = jsonify({'message': 'Logout successful'})
+    
+    # Add security headers
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    
+    # Clear any authentication cookies
+    response.set_cookie('session', '', expires=0, secure=True, httponly=True, samesite='Strict')
+    
+    return response, 200
 
 
 @auth_bp.route('/api/check', methods=['GET'])

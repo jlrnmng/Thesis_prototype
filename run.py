@@ -4,6 +4,7 @@ import sqlite3
 from sqlalchemy import text
 from flask import render_template, request, session, redirect, flash, url_for, make_response, send_file
 from app import create_app, db
+from app.utils.security import secure_route, session_security_check, log_security_event, check_session_timeout, invalidate_session
 
 # Ensure parent dir is importable
 current_dir = os.path.abspath(os.path.dirname(__file__))
@@ -201,6 +202,7 @@ def login():
 
 
 @app.route('/user_dashboard')
+@secure_route
 def user_dashboard():
     print("DEBUG: User dashboard route accessed")
     print(f"DEBUG: Session data: {dict(session)}")
@@ -301,6 +303,7 @@ def user_dashboard():
 
 
 @app.route('/admin_dashboard')
+@secure_route
 def admin_dashboard():
     print("DEBUG: Admin dashboard route accessed")
     
@@ -390,6 +393,7 @@ def post_job():
 
 
 @app.route('/edit_job/<int:job_id>', methods=['GET', 'POST'])
+@secure_route
 def edit_job(job_id):
     user_id = session.get('user_id')
     is_admin = session.get('is_admin')
@@ -477,6 +481,7 @@ def edit_job(job_id):
 
 
 @app.route('/delete_job/<int:job_id>', methods=['POST'])
+@secure_route
 def delete_job(job_id):
     user_id = session.get('user_id')
     is_admin = session.get('is_admin')
@@ -554,9 +559,36 @@ def view_resume(user_id):
 @app.route('/logout')
 def logout():
     print("DEBUG: Logout route accessed")
+    
+    # Get user info for logging before clearing session
+    user_id = session.get('user_id')
+    is_admin = session.get('is_admin')
+    user_type = "Admin" if is_admin else "User"
+    
+    # Clear all session data
     session.clear()
+    
+    # Force session to be deleted on client
+    session.permanent = False
+    
+    # Log the logout event for security audit
+    if user_id:
+        print(f"SECURITY LOG: {user_type} ID {user_id} logged out successfully")
+    
     flash('You have been logged out successfully.', 'success')
-    return redirect(url_for('index'))
+    
+    # Create response with security headers
+    response = make_response(redirect(url_for('index')))
+    
+    # Add security headers to prevent caching
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    
+    # Clear any authentication cookies
+    response.set_cookie('session', '', expires=0, secure=True, httponly=True, samesite='Strict')
+    
+    return response
 
 
 @app.route('/api/job_matches', methods=['GET'])

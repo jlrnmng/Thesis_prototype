@@ -1,17 +1,89 @@
 # Virtual environments
 new_hirely_env/
 hirely_env/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
 
 # Python cache files
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
 
 # Environment variables
 .env
 .venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Database files (keep structure, ignore sensitive data only)
+# Note: Include the database file for development, but exclude sensitive production data
+instance/config.py
+instance/*.log
+
+# Database Options:
+# Option 1: Share database with team (ACTIVE - database and content shared)
+# (Comment out the next 2 lines if you want to share database)
+# *.db
+# *.sqlite3
+
+# Option 2: Each developer creates their own database (uncomment next 2 lines)
+# *.db
+# *.sqlite3
+
+# Option 3: Share specific database but exclude others
+# instance/resume_matcher.db
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Upload directories - SHARING ENABLED
+# Your coworkers will get your uploaded test files (resumes, etc.)
+# (Uncomment next 2 lines if you want to keep uploads local)
+# uploads/*
+# !uploads/.gitkeep
+
+# If you want to exclude specific file types from uploads:
+# uploads/*.pdf
+# uploads/*.docx
+
+# ChromaDB storage - SHARING ENABLED
+# Your coworkers will get your ChromaDB content including embeddings and vector data
+# (Comment out the next 3 lines if you want to share ChromaDB content)
+# chroma_storage/*.parquet
+# chroma_storage/*.sqlite3
+# chroma_storage/backups/
+
+# If you want to keep ChromaDB content local only, uncomment:
+# chroma_storage/*.parquet
+# chroma_storage/*.sqlite3
+# chroma_storage/backups/
+
+# Test output
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentation build
+docs/_build/

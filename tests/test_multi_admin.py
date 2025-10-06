@@ -5,7 +5,10 @@ Test script to verify multi-admin functionality
 
 import os
 import sys
-sys.path.append(os.path.dirname(__file__))
+# Add the parent directory (Hirely root) to the Python path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
 
 from app import create_app, db
 from app.models import Job, User

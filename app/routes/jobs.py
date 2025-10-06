@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, current_app
 from app.models import db, Job
 from app import model, kmeans_model, jobs_collection
 from app.utils.decorators import admin_required
+from app.utils.security import secure_route, session_security_check
 
 jobs_bp = Blueprint('jobs', __name__)
 
@@ -15,6 +16,7 @@ def get_jobs():
         return jsonify({'error': str(e)}), 500
 
 @jobs_bp.route('/', methods=['POST'])
+@secure_route
 @admin_required
 def add_job():
     try:
@@ -68,6 +70,7 @@ def add_job():
         return jsonify({'error': str(e)}), 500
 
 @jobs_bp.route('/<int:job_id>', methods=['DELETE'])
+@secure_route
 @admin_required
 def delete_job(job_id):
     try:
