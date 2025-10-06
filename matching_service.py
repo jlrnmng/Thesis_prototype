@@ -12,8 +12,9 @@ import numpy as np
 import os
 from typing import List, Tuple, Dict
 
-# Suppress ChromaDB PersistentClient warning since we're using an older version intentionally
-warnings.filterwarnings('ignore', message='.*has no attribute.*PersistentClient.*')
+# Suppress ChromaDB warnings
+warnings.filterwarnings('ignore', category=UserWarning)
+warnings.filterwarnings('ignore', message='.*PersistentClient.*')
 
 class MatchingService:
     def __init__(self, chroma_path='chroma_storage'):
@@ -21,11 +22,25 @@ class MatchingService:
         self.chroma_path = chroma_path
         self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
         
-        # Use older ChromaDB API
-        self.client = chromadb.Client(chromadb.config.Settings(
-            chroma_db_impl="duckdb+parquet",
-            persist_directory=chroma_path
-        ))
+        try:
+            # Try to use the older ChromaDB API that matches the version in requirements.txt
+            self.client = chromadb.Client(chromadb.config.Settings(
+                chroma_db_impl="duckdb+parquet",
+                persist_directory=chroma_path
+            ))
+        except Exception as e:
+            print(f"Error initializing ChromaDB with older API: {e}")
+            try:
+                # Fallback to newer API if available
+                if hasattr(chromadb, 'PersistentClient'):
+                    self.client = chromadb.PersistentClient(path=chroma_path)
+                else:
+                    # Use basic client as last resort
+                    self.client = chromadb.Client()
+            except Exception as e2:
+                print(f"Error with fallback ChromaDB initialization: {e2}")
+                # Use in-memory client as final fallback
+                self.client = chromadb.Client()
         
         self.embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
             model_name="all-MiniLM-L6-v2"

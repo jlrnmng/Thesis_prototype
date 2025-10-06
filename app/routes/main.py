@@ -4,6 +4,7 @@ Main routes for HTML pages with AI matching integration
 from flask import Blueprint, render_template, request, session, redirect, flash, jsonify, send_file, current_app, make_response
 from app.models import Job, User, Application, db
 from app.utils.security import secure_route, session_security_check, log_security_event
+from datetime import datetime
 import os
 
 try:
@@ -46,6 +47,66 @@ def register_page():
 def admin_register_page():
     """Admin registration page"""
     return render_template('admin_register.html')
+
+
+@main_bp.route('/dashboard')
+@secure_route
+def dashboard():
+    """Main dashboard route - redirects to appropriate dashboard based on user type"""
+    user_id = session.get('user_id')
+    if not user_id:
+        flash('Please log in to access the dashboard.', 'error')
+        return redirect('/')
+    
+    user = User.query.get(user_id)
+    if not user:
+        flash('User not found.', 'error')
+        session.clear()
+        return redirect('/')
+    
+    # Redirect to appropriate dashboard
+    if user.is_admin:
+        return redirect('/admin_dashboard')
+    else:
+        return redirect('/user_dashboard')
+
+
+@main_bp.route('/logout')
+def logout():
+    """Handle logout with proper session clearing and security"""
+    from app.utils.security import invalidate_session, log_security_event
+    
+    # Get user info for logging before clearing session
+    user_id = session.get('user_id')
+    is_admin = session.get('is_admin')
+    
+    # Log security event
+    if user_id:
+        user_type = "Admin" if is_admin else "User"
+        log_security_event(
+            event_type="logout",
+            user_id=user_id,
+            details=f"{user_type} logged out successfully"
+        )
+    
+    # Clear session using security utility
+    invalidate_session()
+    
+    # Clear all session data
+    session.clear()
+    
+    # Add success message
+    flash('You have been successfully logged out.', 'success')
+    
+    # Redirect to home page
+    response = make_response(redirect('/'))
+    
+    # Add security headers to prevent caching
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    
+    return response
 
 
 @main_bp.route('/user_dashboard')
@@ -355,41 +416,6 @@ def view_resume(user_id):
         return redirect('/admin_dashboard')
 
 
-@main_bp.route('/logout')
-def logout():
-    """Enhanced logout with security measures"""
-    
-    # Get user info for logging before clearing session
-    user_id = session.get('user_id')
-    is_admin = session.get('is_admin')
-    user_type = "Admin" if is_admin else "User"
-    
-    # Clear all session data
-    session.clear()
-    
-    # Force session to be deleted on client
-    session.permanent = False
-    
-    # Log the logout event for security audit
-    if user_id:
-        print(f"SECURITY LOG: {user_type} ID {user_id} logged out successfully (via blueprint)")
-    
-    flash('You have been logged out successfully.', 'success')
-    
-    # Create response with security headers
-    response = make_response(redirect('/'))
-    
-    # Add security headers to prevent caching
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    
-    # Clear any authentication cookies
-    response.set_cookie('session', '', expires=0, secure=True, httponly=True, samesite='Strict')
-    
-    return response
-
-
 @main_bp.route('/apply/<int:job_id>', methods=['POST'])
 @secure_route
 def apply_to_job(job_id):
@@ -443,3 +469,149 @@ def apply_to_job(job_id):
         db.session.rollback()
         print(f"ERROR: Failed to submit application: {e}")
         return jsonify({'success': False, 'error': 'Failed to submit application'}), 500
+
+
+@main_bp.route('/profile')
+def profile():
+    """User profile page"""
+    # Basic session check without timeout enforcement
+    user_id = session.get('user_id')
+    if not user_id:
+        flash('Please log in to access your profile.', 'error')
+        return redirect('/')
+    
+    user = User.query.get(user_id)
+    if not user:
+        flash('User not found', 'error')
+        session.clear()
+        return redirect('/')
+    
+    # Update last activity for session management
+    session['last_activity'] = datetime.utcnow().isoformat()
+    
+    # Apply cache prevention
+    response = make_response(render_template('profile.html', user=user))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    
+    return response
+
+
+@main_bp.route('/update_profile', methods=['POST'])
+def update_profile():
+    """Update user profile information"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'success': False, 'error': 'Please log in to update your profile'}), 401
+    
+    user = User.query.get(user_id)
+    if not user:
+        session.clear()
+        return jsonify({'success': False, 'error': 'User not found'}), 404
+    
+    # Update last activity
+    session['last_activity'] = datetime.utcnow().isoformat()
+    
+    try:
+        # Update personal information
+        user.first_name = request.form.get('first_name', '').strip()
+        user.last_name = request.form.get('last_name', '').strip()
+        user.middle_name = request.form.get('middle_name', '').strip()
+        user.email = request.form.get('email', '').strip()
+        user.phone = request.form.get('phone', '').strip()
+        user.address = request.form.get('address', '').strip()
+        
+        # Validate required fields
+        if not user.first_name or not user.last_name or not user.email:
+            return jsonify({'success': False, 'error': 'First name, last name, and email are required'}), 400
+        
+        # Check email uniqueness (if changed)
+        existing_user = User.query.filter(User.email == user.email, User.id != user.id).first()
+        if existing_user:
+            return jsonify({'success': False, 'error': 'Email already exists'}), 400
+        
+        # Handle resume upload if provided
+        if 'resume' in request.files:
+            resume_file = request.files['resume']
+            if resume_file and resume_file.filename:
+                if resume_file.filename.lower().endswith('.pdf'):
+                    # Generate secure filename
+                    import time
+                    timestamp = str(int(time.time()))
+                    filename = f"{user.first_name}_{user.last_name}_Resume_{timestamp}.pdf"
+                    
+                    # Save file
+                    upload_path = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'uploads'), filename)
+                    resume_file.save(upload_path)
+                    
+                    # Delete old resume if exists
+                    if user.resume:
+                        old_resume_path = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'uploads'), user.resume)
+                        if os.path.exists(old_resume_path):
+                            os.remove(old_resume_path)
+                    
+                    user.resume = filename
+                else:
+                    return jsonify({'success': False, 'error': 'Only PDF files are allowed for resume'}), 400
+        
+        db.session.commit()
+        
+        # Log security event
+        log_security_event(
+            event_type="profile_update",
+            user_id=user_id,
+            details=f"User {user.email} updated profile information"
+        )
+        
+        return jsonify({'success': True, 'message': 'Profile updated successfully'})
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR: Failed to update profile: {e}")
+        return jsonify({'success': False, 'error': 'Failed to update profile'}), 500
+
+
+@main_bp.route('/download_resume/<int:user_id>')
+@secure_route
+def download_resume(user_id):
+    """Download user's resume"""
+    current_user_id = session.get('user_id')
+    if not current_user_id:
+        flash('Please log in to download resumes.', 'error')
+        return redirect('/')
+    
+    current_user = User.query.get(current_user_id)
+    if not current_user:
+        flash('Session expired. Please log in again.', 'error')
+        session.clear()
+        return redirect('/')
+    
+    target_user = User.query.get(user_id)
+    if not target_user:
+        flash('User not found', 'error')
+        return redirect('/profile' if current_user_id == user_id else '/dashboard')
+    
+    # Users can only download their own resume, admins can download any
+    if not current_user.is_admin and current_user_id != user_id:
+        flash('Access denied', 'error')
+        return redirect('/dashboard')
+    
+    if not target_user.resume:
+        flash('Resume not found', 'error')
+        return redirect('/profile' if current_user_id == user_id else '/dashboard')
+    
+    resume_path = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'uploads'), target_user.resume)
+    
+    if not os.path.exists(resume_path):
+        flash('Resume file not found', 'error')
+        return redirect('/profile' if current_user_id == user_id else '/dashboard')
+    
+    # Log download for security audit
+    log_security_event(
+        event_type="resume_download",
+        user_id=current_user_id,
+        details=f"User {current_user.email} downloaded resume for user {target_user.email}"
+    )
+    
+    return send_file(resume_path, as_attachment=True, download_name=target_user.resume)

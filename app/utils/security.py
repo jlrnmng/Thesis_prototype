@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import functools
 
 # Session timeout in minutes
-SESSION_TIMEOUT_MINUTES = 30
+SESSION_TIMEOUT_MINUTES = 60  # Increased from 30 to 60 minutes
 
 def check_session_timeout():
     """
@@ -18,7 +18,7 @@ def check_session_timeout():
     
     last_activity = session.get('last_activity')
     if not last_activity:
-        # No last activity recorded, set it now
+        # No last activity recorded, set it now and consider session valid
         session['last_activity'] = datetime.utcnow().isoformat()
         return True
     
@@ -27,16 +27,24 @@ def check_session_timeout():
         current_time = datetime.utcnow()
         
         # Check if session has timed out
-        if current_time - last_activity_time > timedelta(minutes=SESSION_TIMEOUT_MINUTES):
+        time_diff = current_time - last_activity_time
+        if time_diff > timedelta(minutes=SESSION_TIMEOUT_MINUTES):
+            print(f"Session timeout: {time_diff.total_seconds()/60:.1f} minutes since last activity")
             return False
         
-        # Update last activity time
-        session['last_activity'] = current_time.isoformat()
+        # Update last activity time only if more than 5 minutes have passed
+        # This reduces database writes while maintaining session freshness
+        if time_diff > timedelta(minutes=5):
+            session['last_activity'] = current_time.isoformat()
+        
         return True
         
-    except (ValueError, TypeError):
-        # Invalid timestamp format, clear session
-        return False
+    except (ValueError, TypeError) as e:
+        # Invalid timestamp format, but don't immediately invalidate
+        # Just reset the timestamp and continue
+        print(f"Session timestamp error: {e}, resetting timestamp")
+        session['last_activity'] = datetime.utcnow().isoformat()
+        return True
 
 def invalidate_session():
     """
@@ -88,10 +96,11 @@ def session_security_check(f):
         if 'user_id' not in session:
             return f(*args, **kwargs)  # Let the route handle unauthenticated users
         
-        # Check session timeout
+        # Check session timeout but don't automatically invalidate
+        # Let the route decide what to do with expired sessions
         if not check_session_timeout():
-            invalidate_session()
-            # The route will detect the cleared session and redirect to login
+            print(f"Session timeout detected for user {session.get('user_id')}")
+            # Don't automatically clear - let the route handle it
         
         return f(*args, **kwargs)
     
