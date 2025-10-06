@@ -90,9 +90,13 @@ class Job(db.Model):
     cluster_id = db.Column(db.Integer)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # 👤 Link job to the admin who created it
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     # 🔗 Relationships
     applications = db.relationship('Application', backref='job', lazy=True)
+    creator = db.relationship('User', backref='jobs_created', lazy=True)
 
     def to_dict(self):
         """Convert job object to dictionary for API responses"""
@@ -103,6 +107,8 @@ class Job(db.Model):
             "cluster_id": self.cluster_id,
             "is_active": self.is_active,
             "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_by": self.created_by,
+            "creator_name": self.creator.full_name if self.creator else None,
             "application_count": len(self.applications)
         }
 

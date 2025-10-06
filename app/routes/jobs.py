@@ -41,8 +41,14 @@ def add_job():
         # Predict cluster
         cluster_id = int(kmeans_model.predict(job_vector)[0])
         
-        # Save to database
-        new_job = Job(role=role, description=description, cluster_id=cluster_id)
+        # Save to database - Associate with current admin
+        from flask import session
+        new_job = Job(
+            role=role, 
+            description=description, 
+            cluster_id=cluster_id,
+            created_by=session['user_id']  # Link to current admin
+        )
         db.session.add(new_job)
         db.session.commit()
         

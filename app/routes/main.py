@@ -140,7 +140,8 @@ def admin_dashboard():
         flash('User account not found. Please log in again.', 'error')
         return redirect('/login')
     
-    jobs = Job.query.filter_by(is_active=True).all()
+    # Get only jobs created by this admin
+    jobs = Job.query.filter_by(created_by=user_id, is_active=True).all()
     
     return render_template('dashboard_admin.html', user=user, jobs=jobs)
 
@@ -173,7 +174,8 @@ def post_job():
         new_job = Job(
             role=role,
             description=description,
-            is_active=True
+            is_active=True,
+            created_by=user_id  # Associate with current admin
         )
         
         db.session.add(new_job)
@@ -208,6 +210,11 @@ def edit_job(job_id):
         return redirect('/login')
     
     job = Job.query.get_or_404(job_id)
+    
+    # Check if current admin owns this job
+    if job.created_by != user_id:
+        flash('Access denied. You can only edit jobs you created.', 'error')
+        return redirect('/admin_dashboard')
     
     if request.method == 'GET':
         applications = Application.query.filter_by(job_id=job_id).all()
@@ -280,6 +287,11 @@ def delete_job(job_id):
     
     job = Job.query.get_or_404(job_id)
     
+    # Check if current admin owns this job
+    if job.created_by != user_id:
+        flash('Access denied. You can only delete jobs you created.', 'error')
+        return redirect('/admin_dashboard')
+    
     try:
         Application.query.filter_by(job_id=job_id).delete()
         db.session.delete(job)
@@ -306,6 +318,16 @@ def view_resume(user_id):
         return redirect('/login')
     
     user = User.query.get_or_404(user_id)
+    
+    # Check if this user has applied to any jobs created by the current admin
+    user_applications = Application.query.filter_by(user_id=user_id).all()
+    admin_job_ids = [job.id for job in Job.query.filter_by(created_by=admin_id).all()]
+    
+    has_access = any(app.job_id in admin_job_ids for app in user_applications)
+    
+    if not has_access:
+        flash('Access denied. You can only view resumes of applicants to your own jobs.', 'error')
+        return redirect('/admin_dashboard')
     
     if not user.resume:
         flash('No resume available for this user.', 'error')
