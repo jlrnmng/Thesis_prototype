@@ -337,13 +337,242 @@
         margin-left: 0;
       }
     }
+
+    /* Explanation Section Styles */
+    .explanation-section {
+      background: #f8fcfa;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .explanation-content {
+      display: grid;
+      gap: 20px;
+    }
+
+    .score-breakdown {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .score-item {
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      border-left: 4px solid #27ae98;
+      text-align: center;
+    }
+
+    .score-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #27ae98;
+      margin-bottom: 5px;
+    }
+
+    .score-label {
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .matching-terms {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .term-item {
+      background: #e8f5f0;
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin: 5px;
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #2c3e50;
+    }
+
+    .insights-section {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+    }
+
+    .insight-item {
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .insight-item:last-child {
+      border-bottom: none;
+    }
+
+    /* Enhanced explanation styles */
+    .score-desc {
+      font-size: 10px;
+      color: #888;
+      margin-top: 3px;
+    }
+
+    .detailed-explanation {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .explanation-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #2c3e50;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Style for markdown-like content in explanation */
+    .explanation-text strong {
+      color: #27ae98;
+      font-weight: 600;
+    }
+
+    .explanation-text h4 {
+      color: #2c3e50;
+      margin: 15px 0 8px 0;
+      font-size: 16px;
+    }
+
+    .terms-detailed {
+      display: grid;
+      gap: 12px;
+    }
+
+    .term-detail {
+      background: #f8fcfa;
+      padding: 12px;
+      border-radius: 6px;
+      border-left: 3px solid #27ae98;
+    }
+
+    .term-name {
+      font-weight: 600;
+      color: #2c3e50;
+      display: inline-block;
+      margin-right: 10px;
+    }
+
+    .term-score {
+      background: #27ae98;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .term-snippet {
+      margin-top: 8px;
+      font-style: italic;
+      color: #666;
+      font-size: 13px;
+      background: #fff;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #eee;
+    }
+
+    .recommendation-section {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+    }
+
+    /* New styles for enhanced percentage display */
+    .match-percentage-header {
+      background: linear-gradient(135deg, #27ae98, #2ecc71);
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      text-align: center;
+      color: white;
+    }
+
+    .final-match-score {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .percentage-circle {
+      background: rgba(255, 255, 255, 0.2);
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      width: 120px;
+      height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .percentage-number {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .percentage-label {
+      font-size: 12px;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+
+    /* Enhanced score item styles */
+    .score-item.semantic {
+      border-left-color: #3498db;
+    }
+
+    .score-item.keyword {
+      border-left-color: #e74c3c;
+    }
+
+    .score-item.coverage {
+      border-left-color: #f39c12;
+    }
+
+    .score-item.semantic .score-value {
+      color: #3498db;
+    }
+
+    .score-item.keyword .score-value {
+      color: #e74c3c;
+    }
+
+    .score-item.coverage .score-value {
+      color: #f39c12;
+    }
+
+    .expanded {
+      transform: scale(1.02);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+      z-index: 10;
+      position: relative;
+    }
   </style>
 </head>
 <body>
 
   <header>
     <div class="logo">
-      <img src="/static/hirely_logo.png" alt="Hirely Logo">
+      <a href="/admin_dashboard" style="text-decoration: none; color: inherit;">
+        <img src="/static/hirely_logo.png" alt="Hirely Logo">
+      </a>
     </div>
     <nav>
       <a href="/admin_dashboard">Dashboard</a>
@@ -417,19 +646,35 @@
         <h2>Applicants (Ranked by Match Score)</h2>
         {% if applications %}
           {% for application in applications %}
-          <div class="applicant-card">
+          <div class="applicant-card" data-application-id="{{ application.id }}" style="cursor: pointer; transition: all 0.3s ease;">
             <div class="applicant-info">
               <p class="applicant-name">{{ application.applicant.full_name }}</p>
               <p class="applicant-email">📧 {{ application.applicant.email }}</p>
               <p class="applicant-date">Applied: {{ application.submission_date.strftime('%b %d, %Y') if application.submission_date else 'N/A' }}</p>
             </div>
             <div class="match-score">
-              <div class="score-circle">{{ application.match_score }}%</div>
-              <div class="score-label">Match Score</div>
+              <div class="score-circle">{{ application.match_score }}</div>
+              <div class="score-label">Points</div>
             </div>
             {% if application.applicant.resume %}
-            <button class="view-resume-btn" onclick="window.open('/view_resume/{{ application.applicant.id }}', '_blank')">View Resume</button>
+            <button class="view-resume-btn" data-resume-url="/view_resume/{{ application.applicant.id }}">View Resume</button>
             {% endif %}
+            
+            <!-- Explanation Section (Initially Hidden) -->
+            <div id="explanation-{{ application.id }}" class="explanation-section" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e8f5f0;">
+              <div class="explanation-header">
+                <h4 style="color: #2c3e50; margin-bottom: 15px; display: flex; align-items: center;">
+                  <span style="margin-right: 10px;">🔍</span>
+                  Match Analysis
+                </h4>
+                <div class="loading-spinner" style="text-align: center; padding: 20px;">
+                  <span style="color: #27ae98;">Loading explanation...</span>
+                </div>
+              </div>
+              <div class="explanation-content" style="display: none;">
+                <!-- Content will be populated by JavaScript -->
+              </div>
+            </div>
           </div>
           {% endfor %}
         {% else %}
@@ -444,6 +689,212 @@
   <footer>
     &copy; 2025 Hirely. Admin Panel.
   </footer>
+
+  <script>
+    // Track expanded state for each applicant
+    const expandedStates = {};
+
+    // Initialize event listeners when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add click event listeners to all applicant cards
+      const applicantCards = document.querySelectorAll('.applicant-card[data-application-id]');
+      applicantCards.forEach(card => {
+        card.addEventListener('click', function(event) {
+          // Don't trigger if clicking on the resume button
+          if (event.target.classList.contains('view-resume-btn')) {
+            return;
+          }
+          
+          const applicationId = this.getAttribute('data-application-id');
+          toggleExplanation(parseInt(applicationId));
+        });
+      });
+
+      // Add click event listeners to all resume buttons
+      const resumeButtons = document.querySelectorAll('.view-resume-btn[data-resume-url]');
+      resumeButtons.forEach(button => {
+        button.addEventListener('click', function(event) {
+          event.stopPropagation(); // Prevent triggering the card click
+          const resumeUrl = this.getAttribute('data-resume-url');
+          window.open(resumeUrl, '_blank');
+        });
+      });
+    });
+
+    function toggleExplanation(applicationId) {
+      const explanationSection = document.getElementById(`explanation-${applicationId}`);
+      const applicantCard = explanationSection.closest('.applicant-card');
+      const isExpanded = expandedStates[applicationId] || false;
+
+      if (!isExpanded) {
+        // Expand and load explanation
+        explanationSection.style.display = 'block';
+        applicantCard.classList.add('expanded');
+        expandedStates[applicationId] = true;
+        
+        // Load explanation data
+        loadExplanation(applicationId);
+      } else {
+        // Collapse
+        explanationSection.style.display = 'none';
+        applicantCard.classList.remove('expanded');
+        expandedStates[applicationId] = false;
+      }
+    }
+
+    async function loadExplanation(applicationId) {
+      const explanationContent = document.querySelector(`#explanation-${applicationId} .explanation-content`);
+      const loadingSpinner = document.querySelector(`#explanation-${applicationId} .loading-spinner`);
+      
+      try {
+        console.log('Fetching explanation for application ID:', applicationId);
+        const response = await fetch(`/api/shortlist/explain/${applicationId}`);
+        
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Error response:', errorText);
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Explanation data:', data);
+        
+        // Hide loading spinner and show content
+        loadingSpinner.style.display = 'none';
+        explanationContent.style.display = 'block';
+        
+        // Populate explanation content
+        explanationContent.innerHTML = formatExplanation(data);
+        
+      } catch (error) {
+        console.error('Error loading explanation:', error);
+        loadingSpinner.innerHTML = `<span style="color: #e74c3c;">Error loading explanation: ${error.message}</span>`;
+      }
+    }
+
+    function formatExplanation(data) {
+      const matchingAnalysis = data.matching_analysis || {};
+      const scoreBreakdown = data.score_breakdown || {};
+      const recommendation = data.recommendation || {};
+      const candidateDetails = data.candidate_details || {};
+      
+      // Get scores from the new scoring structure
+      const finalMatchScore = scoreBreakdown.final_match_score || matchingAnalysis.final_match_score || 0;
+      const cosinePoints = scoreBreakdown.cosine_points || matchingAnalysis.cosine_points || 0;
+      const bm25Points = scoreBreakdown.bm25_points || matchingAnalysis.bm25_points || 0;
+      const keyTerms = matchingAnalysis.key_matching_terms || [];
+      const tokenCoverage = (matchingAnalysis.token_coverage || 0) * 100;
+      const detailedExplanation = matchingAnalysis.detailed_explanation || '';
+      
+      // Determine score tier and color scheme
+      const getScoreTier = (score) => {
+        if (score >= 80) return { tier: 'excellent', color: '#28a745', bgColor: '#d4edda' };
+        if (score >= 65) return { tier: 'good', color: '#007bff', bgColor: '#cce7ff' };
+        if (score >= 50) return { tier: 'moderate', color: '#ffc107', bgColor: '#fff3cd' };
+        if (score >= 35) return { tier: 'limited', color: '#fd7e14', bgColor: '#ffeaa7' };
+        return { tier: 'poor', color: '#dc3545', bgColor: '#f8d7da' };
+      };
+      
+      const scoreTier = getScoreTier(finalMatchScore);
+      
+      // Format key matching terms with better styling
+      const termsHTML = keyTerms.slice(0, 6).map(term => 
+        `<div class="term-card" style="background: #ffffff; border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span class="term-name" style="font-weight: 600; color: #2c3e50; font-size: 14px;">${term.term}</span>
+            <span class="term-score" style="background: #e7f3ff; color: #004085; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">
+              ${term.contribution.toFixed(1)} pts
+            </span>
+          </div>
+          ${term.resume_snippet ? 
+            `<div class="term-snippet" style="color: #6c757d; font-size: 12px; font-style: italic; background: #f8f9fa; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #28a745;">
+              "${term.resume_snippet}"
+            </div>` : ''}
+        </div>`
+      ).join('');
+      
+      return `
+        <div class="match-summary-header" style="text-align: center; margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, ${scoreTier.bgColor} 0%, #ffffff 100%); border-radius: 12px; border: 2px solid ${scoreTier.color};">
+          <div class="score-circle" style="display: inline-flex; flex-direction: column; align-items: center; justify-content: center; width: 120px; height: 120px; border: 4px solid ${scoreTier.color}; border-radius: 50%; background: #ffffff; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <span style="font-size: 32px; font-weight: 700; color: ${scoreTier.color}; line-height: 1;">${finalMatchScore.toFixed(0)}</span>
+            <span style="font-size: 12px; color: #6c757d; font-weight: 500;">/ 100 Points</span>
+          </div>
+          <div style="font-size: 18px; font-weight: 600; color: #2c3e50; margin-bottom: 5px;">
+            ${finalMatchScore >= 80 ? '🌟 Excellent Match' : 
+              finalMatchScore >= 65 ? '👍 Good Match' :
+              finalMatchScore >= 50 ? '🤔 Moderate Match' :
+              finalMatchScore >= 35 ? '⚠️ Limited Match' : '❌ Poor Match'}
+          </div>
+          <div style="color: #6c757d; font-size: 14px; line-height: 1.4;">
+            ${detailedExplanation || matchingAnalysis.explanation || 'AI-powered matching analysis completed.'}
+          </div>
+        </div>
+
+        <div class="score-breakdown-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px;">
+          <div class="score-card" style="background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%); border: 1px solid #2196f3; border-radius: 10px; padding: 16px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: #1976d2; margin-bottom: 5px;">
+              🧠 ${cosinePoints.toFixed(1)}
+            </div>
+            <div style="font-size: 12px; color: #424242; font-weight: 600; margin-bottom: 3px;">SEMANTIC MATCH</div>
+            <div style="font-size: 11px; color: #757575;">Skills & Experience</div>
+          </div>
+          
+          <div class="score-card" style="background: linear-gradient(135deg, #e8f5e8 0%, #ffffff 100%); border: 1px solid #4caf50; border-radius: 10px; padding: 16px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: #388e3c; margin-bottom: 5px;">
+              🔍 ${bm25Points.toFixed(1)}
+            </div>
+            <div style="font-size: 12px; color: #424242; font-weight: 600; margin-bottom: 3px;">KEYWORD MATCH</div>
+            <div style="font-size: 11px; color: #757575;">Technical Terms</div>
+          </div>
+          
+          <div class="score-card" style="background: linear-gradient(135deg, #fff3e0 0%, #ffffff 100%); border: 1px solid #ff9800; border-radius: 10px; padding: 16px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: #f57c00; margin-bottom: 5px;">
+              📊 ${(scoreBreakdown.token_coverage_percentage || tokenCoverage).toFixed(0)}%
+            </div>
+            <div style="font-size: 12px; color: #424242; font-weight: 600; margin-bottom: 3px;">JOB COVERAGE</div>
+            <div style="font-size: 11px; color: #757575;">Requirements Met</div>
+          </div>
+        </div>
+        
+        ${keyTerms.length > 0 ? `
+        <div class="matching-terms-section" style="margin-bottom: 25px;">
+          <div style="display: flex; align-items: center; margin-bottom: 15px;">
+            <span style="font-size: 18px; margin-right: 8px;">🎯</span>
+            <h5 style="margin: 0; color: #2c3e50; font-size: 16px; font-weight: 600;">Key Matching Terms</h5>
+          </div>
+          <div class="terms-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+            ${termsHTML}
+          </div>
+        </div>
+        ` : ''}
+        
+        <div class="recommendation-section" style="background: ${scoreTier.bgColor}; border: 1px solid ${scoreTier.color}; border-radius: 10px; padding: 20px;">
+          <div style="display: flex; align-items: center; margin-bottom: 15px;">
+            <span style="font-size: 18px; margin-right: 8px;">💡</span>
+            <h5 style="margin: 0; color: #2c3e50; font-size: 16px; font-weight: 600;">AI Recommendation</h5>
+          </div>
+          <div class="recommendation-content">
+            <div class="status-badge" style="display: inline-flex; align-items: center; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px; margin-bottom: 12px;
+              ${recommendation.status === 'Highly Recommended' ? 'background: #28a745; color: white;' : 
+                recommendation.status === 'Recommended' ? 'background: #007bff; color: white;' :
+                recommendation.status === 'Consider' ? 'background: #ffc107; color: #212529;' : 
+                'background: #dc3545; color: white;'}">
+              ${recommendation.status === 'Highly Recommended' ? '⭐ ' : 
+                recommendation.status === 'Recommended' ? '👍 ' :
+                recommendation.status === 'Consider' ? '🤔 ' : '⚠️ '}
+              ${recommendation.status || 'Under Review'}
+            </div>
+            <div style="color: #495057; line-height: 1.6; font-size: 14px;">
+              ${recommendation.reasoning || 'This candidate has been evaluated using our hybrid AI matching system that analyzes both semantic similarity and keyword relevance to provide comprehensive assessment.'}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  </script>
 
 </body>
 </html>

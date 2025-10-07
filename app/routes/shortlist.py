@@ -17,6 +17,63 @@ def _get_snippet(text, term, radius=40):
     end = min(len(text), idx + len(term) + radius)
     return text[start:end].strip()
 
+def _generate_detailed_explanation(final_percentage, semantic_score, keyword_score, cosine_raw, bm25_raw, coverage, term_count, candidate_name, job_role, top_terms):
+    """
+    Generate a detailed, human-readable explanation of the matching score with scoring breakdown
+    """
+    explanation_parts = []
+    
+    # Calculate component scores using raw values
+    cosine_points = cosine_raw * 70
+    bm25_points = bm25_raw * 30
+    
+    # Scoring methodology breakdown
+    explanation_parts.append("**Match Analysis Summary**")
+    explanation_parts.append("")
+    
+    # Score-based interpretation using the calculated final score
+    calculated_final_score = cosine_points + bm25_points
+    
+    if calculated_final_score > 80:
+        explanation_parts.append(f"**{candidate_name}** demonstrates **excellent alignment** with the {job_role} position.")
+        explanation_parts.append(f"**Total Score: {calculated_final_score:.1f} points** - Strong compatibility across both semantic understanding and keyword matching.")
+    elif calculated_final_score > 60:
+        explanation_parts.append(f"**{candidate_name}** shows **good compatibility** with the {job_role} requirements.")
+        explanation_parts.append(f"**Total Score: {calculated_final_score:.1f} points** - Solid relevant experience.")
+    elif calculated_final_score > 40:
+        explanation_parts.append(f"**{candidate_name}** presents **moderate alignment** with the {job_role} position.")
+        explanation_parts.append(f"**Total Score: {calculated_final_score:.1f} points** - Some relevant qualifications worth exploring.")
+    elif calculated_final_score > 0:
+        explanation_parts.append(f"**{candidate_name}** shows **limited alignment** with the {job_role} requirements.")
+        explanation_parts.append(f"**Total Score: {calculated_final_score:.1f} points** - Minimal overlap with job requirements.")
+    else:
+        explanation_parts.append(f"**{candidate_name}** shows **very limited alignment** with the {job_role} requirements.")
+        explanation_parts.append(f"**Total Score: {calculated_final_score:.1f} points** - Significant gaps in required qualifications.")
+    
+    explanation_parts.append("")
+    
+    # Simple score breakdown
+    explanation_parts.append("**Score Breakdown:**")
+    explanation_parts.append(f"• **Semantic Match:** {cosine_points:.1f} points (content similarity)")
+    explanation_parts.append(f"• **Keyword Match:** {bm25_points:.1f} points (specific terms)")
+    explanation_parts.append("")
+    
+    # Coverage explanation
+    coverage_percent = coverage * 100
+    if coverage_percent > 60:
+        explanation_parts.append(f"**Coverage:** {coverage_percent:.1f}% of job requirements (comprehensive match)")
+    elif coverage_percent > 40:
+        explanation_parts.append(f"**Coverage:** {coverage_percent:.1f}% of job requirements (moderate match)")
+    else:
+        explanation_parts.append(f"**Coverage:** {coverage_percent:.1f}% of job requirements (limited match)")
+    
+    # Top matching terms
+    if top_terms and len(top_terms) > 0:
+        top_term_names = [term['term'] for term in top_terms[:3]]
+        explanation_parts.append(f"**Key matching areas:** {', '.join(top_term_names)}")
+    
+    return "\n".join(explanation_parts)
+
 def _generate_recommendation_reasoning(score, term_count):
     """
     Generate recommendation reasoning based on score and matching terms
@@ -115,9 +172,19 @@ def get_shortlist(job_id):
 @admin_required
 def explain_shortlist(application_id):
     try:
+        print(f"DEBUG: Explaining shortlist for application ID: {application_id}")
+        
         application = Application.query.get_or_404(application_id)
         job = Job.query.get_or_404(application.job_id)
         user = User.query.get(application.user_id)
+
+        print(f"DEBUG: Found application for user {user.first_name} {user.last_name}")
+        
+        resume_text = application.resume_text or ""
+        job_text = f"{job.role} {job.description}" or ""
+
+        print(f"DEBUG: Resume text length: {len(resume_text)}")
+        print(f"DEBUG: Job text length: {len(job_text)}")
 
         resume_text = application.resume_text or ""
         job_text = f"{job.role} {job.description}" or ""
@@ -125,19 +192,65 @@ def explain_shortlist(application_id):
         tokenized_resume = resume_text.lower().split()
         tokenized_job = job_text.lower().split()
 
-        # BM25 index on resume
-        bm25 = BM25Okapi([tokenized_resume])
+        # Calculate hybrid scores (semantic + keyword matching)
+        from sentence_transformers import SentenceTransformer
+        from sklearn.metrics.pairwise import cosine_similarity
+        import numpy as np
+        
+        # Initialize SentenceTransformer model
+        try:
+            model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+        except Exception:
+            model = None
+            
+        # Calculate semantic similarity score (cosine similarity)
+        semantic_score = 0.5  # Default fallback
+        if model:
+            try:
+                job_embedding = model.encode([job_text])
+                resume_embedding = model.encode([resume_text])
+                semantic_score = float(cosine_similarity(job_embedding, resume_embedding)[0][0])
+            except Exception as e:
+                print(f"Error calculating semantic similarity: {e}")
 
-        # Overall score
-        overall_score = float(bm25.get_scores(tokenized_job)[0])
+        # BM25 index on resume corpus for keyword matching (same as matching service)
+        tokenized_resume_corpus = [tokenized_resume]  # Create corpus with one resume
+        bm25 = BM25Okapi(tokenized_resume_corpus)
 
-        # Per-term contributions
+        # Calculate keyword matching score (BM25) using job tokens as query
+        bm25_raw_scores = bm25.get_scores(tokenized_job)
+        bm25_raw_score = float(bm25_raw_scores[0]) if len(bm25_raw_scores) > 0 else 0
+        
+        # Normalize BM25 score to 0-1 range to prevent negative final scores
+        def normalize_bm25_score(score):
+            # Based on observed BM25 scores, typical range is around -20 to +15
+            bm25_min, bm25_max = -20.0, 15.0
+            normalized = (score - bm25_min) / (bm25_max - bm25_min)
+            return max(0, min(1, normalized))
+        
+        bm25_normalized = normalize_bm25_score(bm25_raw_score)
+        
+        # Calculate final score using the NEW scoring methodology:
+        # Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
+        cosine_points = semantic_score * 70          # Cosine score (0-1) × 70 = 0-70 points
+        bm25_points = bm25_normalized * 30           # Normalized BM25 (0-1) × 30 = 0-30 points
+        final_match_score = cosine_points + bm25_points
+        
+        print(f"DEBUG: Cosine score: {semantic_score} -> {cosine_points:.1f} points")
+        print(f"DEBUG: BM25 raw: {bm25_raw_score} -> normalized: {bm25_normalized:.3f} -> {bm25_points:.1f} points")
+        print(f"DEBUG: Final match score: {final_match_score:.1f}")
+        
+        # Use the final match score as the overall score for compatibility
+        overall_score = final_match_score
+
+        # Per-term contributions (using original BM25 instance for term analysis)
+        term_bm25 = BM25Okapi([tokenized_resume])  # BM25 for individual term scoring
         term_scores = {}
         for term in set(tokenized_job):
             if len(term) < 2:
                 continue
             try:
-                score = float(bm25.get_scores([term])[0])
+                score = float(term_bm25.get_scores([term])[0])
             except Exception:
                 score = 0.0
             if score > 0 and term in " ".join(tokenized_resume):
@@ -162,10 +275,43 @@ def explain_shortlist(application_id):
         matched_tokens = sum(1 for t in set(tokenized_job) if t in tokenized_resume)
         token_coverage = matched_tokens / max(1, len(set(tokenized_job)))
 
-        recommendation_status = (
-            'Recommended' if overall_score > 1.0
-            else 'Consider' if overall_score > 0.5
-            else 'Low Match'
+        # Enhanced recommendation logic using the new scoring methodology
+        if final_match_score > 80:
+            recommendation_status = 'Highly Recommended'
+            score_interpretation = 'Excellent match with strong semantic and keyword alignment'
+        elif final_match_score > 65:
+            recommendation_status = 'Recommended'
+            score_interpretation = 'Good match with solid relevant experience'
+        elif final_match_score > 50:
+            recommendation_status = 'Consider'
+            score_interpretation = 'Moderate match with some relevant qualifications'
+        elif final_match_score > 35:
+            recommendation_status = 'Review Required'
+            score_interpretation = 'Limited match, requires detailed evaluation'
+        else:
+            recommendation_status = 'Low Match'
+            score_interpretation = 'Minimal alignment with job requirements'
+
+        # Calculate detailed score breakdown components using the new methodology
+        score_breakdown = {
+            'final_match_score': round(final_match_score, 1),
+            'cosine_raw_score': round(semantic_score, 3),
+            'bm25_raw_score': round(bm25_raw_score, 3),
+            'bm25_normalized_score': round(bm25_normalized, 3),
+            'cosine_points': round(cosine_points, 1),
+            'bm25_points': round(bm25_points, 1),
+            'semantic_weight': 70,
+            'keyword_weight': 30,
+            'token_coverage_percentage': round(token_coverage * 100, 1),
+            'matching_terms_count': len(formatted_terms),
+            'total_job_terms': len(set(tokenized_job)),
+            'total_resume_terms': len(set(tokenized_resume))
+        }
+
+        # Generate detailed explanation
+        detailed_explanation = _generate_detailed_explanation(
+            final_match_score, semantic_score, bm25_normalized, semantic_score, bm25_normalized, token_coverage, len(formatted_terms), 
+            user.first_name, job.role, formatted_terms[:5]
         )
 
         response = {
@@ -180,15 +326,21 @@ def explain_shortlist(application_id):
                 'position': job.role,
                 'department_cluster': job.cluster_id
             },
+            'score_breakdown': score_breakdown,
             'matching_analysis': {
-                'relevance_score': round(overall_score, 3),
+                'final_match_score': round(final_match_score, 1),
+                'cosine_raw_score': round(semantic_score, 3),
+                'bm25_raw_score': round(bm25_raw_score, 3),
+                'cosine_points': round(cosine_points, 1),
+                'bm25_points': round(bm25_points, 1),
                 'key_matching_terms': formatted_terms,
                 'token_coverage': round(token_coverage, 3),
-                'explanation': f"Candidate {user.full_name} scored {round(overall_score, 3)} based on resume containing relevant terms. Top contributing terms and context snippets are provided for review."
+                'detailed_explanation': detailed_explanation,
+                'explanation': f"Candidate {user.full_name} achieved {round(final_match_score, 1)} points total score based on the new scoring methodology: (Cosine Similarity × 70) + (BM25 Score × 30)."
             },
             'recommendation': {
                 'status': recommendation_status,
-                'reasoning': _generate_recommendation_reasoning(overall_score, len(formatted_terms))
+                'reasoning': _generate_recommendation_reasoning(final_match_score, len(formatted_terms))
             }
         }
 

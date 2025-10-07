@@ -23,15 +23,16 @@ class MatchingService:
         self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
         
         try:
-            # Try to use the older ChromaDB API that matches the version in requirements.txt
+            # For ChromaDB 0.3.25, use the correct API
+            import chromadb.config
             self.client = chromadb.Client(chromadb.config.Settings(
                 chroma_db_impl="duckdb+parquet",
                 persist_directory=chroma_path
             ))
         except Exception as e:
-            print(f"Error initializing ChromaDB with older API: {e}")
+            print(f"Error initializing ChromaDB with version 0.3.25 API: {e}")
             try:
-                # Fallback to newer API if available
+                # Fallback for newer versions
                 if hasattr(chromadb, 'PersistentClient'):
                     self.client = chromadb.PersistentClient(path=chroma_path)
                 else:
@@ -91,7 +92,11 @@ class MatchingService:
                 os.environ.setdefault('CHROMA_DISABLE_TELEMETRY', '1')
                 # Recreate client and collections with telemetry disabled and retry
                 try:
-                    self.client = chromadb.PersistentClient(path=self.chroma_path)
+                    # Use the correct API for ChromaDB 0.3.25
+                    self.client = chromadb.Client(chromadb.config.Settings(
+                        chroma_db_impl="duckdb+parquet",
+                        persist_directory=self.chroma_path
+                    ))
                     self.resumes_collection = self.client.get_collection(
                         name="resumes",
                         embedding_function=self.embedding_function
@@ -146,12 +151,14 @@ class MatchingService:
         cosine_scores = self._get_cosine_similarity_scores(job_query, resume_texts)
         bm25_scores = self._get_bm25_scores(job_query, resume_texts)
         
-        cosine_scores_norm = self._normalize_scores(cosine_scores)
-        bm25_scores_norm = self._normalize_scores(bm25_scores)
+        # Normalize BM25 scores to 0-1 range to prevent negative final scores
+        bm25_scores_normalized = self._normalize_scores(bm25_scores)
         
+        # Use the NEW scoring methodology: Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
+        # Cosine scores are already 0-1, BM25 scores are now normalized to 0-1
         final_scores = [
-            (0.7 * cos + 0.3 * bm25) * 100
-            for cos, bm25 in zip(cosine_scores_norm, bm25_scores_norm)
+            (cos * 70) + (bm25_norm * 30)
+            for cos, bm25_norm in zip(cosine_scores, bm25_scores_normalized)
         ]
         
         rankings = list(zip(app_ids, final_scores))

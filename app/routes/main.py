@@ -296,7 +296,7 @@ def edit_job(job_id):
                 
                 score_dict = {app_id: score for app_id, score in rankings}
                 for app in applications:
-                    app.match_score = round(score_dict.get(app.id, 0), 2)
+                    app.match_score = round(score_dict.get(app.id, 0), 1)
                 
                 applications.sort(key=lambda x: x.match_score, reverse=True)
                 print(f"DEBUG: Ranked {len(applications)} applications for job {job_id}")
