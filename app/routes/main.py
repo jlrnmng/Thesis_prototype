@@ -135,7 +135,9 @@ def user_dashboard():
     
     if MATCHING_ENABLED:
         try:
-            # Get user's most recent application to use the preprocessed resume text
+            resume_text = None
+            
+            # First, try to get resume text from the user's most recent application
             latest_application = Application.query.filter_by(
                 user_id=user_id
             ).order_by(Application.submission_date.desc()).first()
@@ -144,8 +146,21 @@ def user_dashboard():
             
             if latest_application and latest_application.resume_text:
                 resume_text = latest_application.resume_text
-                print(f"DEBUG: Resume text length from application: {len(resume_text)}")
-                
+                print(f"DEBUG: Resume text from application: {len(resume_text)} chars")
+            
+            # If no application resume text, try to extract from uploaded resume file
+            elif user.resume and RESUME_EXTRACTION_ENABLED:
+                print(f"DEBUG: Trying to extract from uploaded resume: {user.resume}")
+                upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+                resume_path = os.path.join(upload_folder, user.resume)
+                if os.path.exists(resume_path):
+                    try:
+                        resume_text = extract_resume_text(resume_path, preprocess=True)
+                        print(f"DEBUG: Extracted resume text: {len(resume_text)} chars")
+                    except Exception as e:
+                        print(f"DEBUG: Failed to extract resume text: {e}")
+            
+            if resume_text and len(resume_text.strip()) > 0:
                 matching_service = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
                 job_rankings = matching_service.get_top_jobs_for_resume(
                     resume_text, 
@@ -163,7 +178,7 @@ def user_dashboard():
                 print(f"DEBUG: Calculated match scores for {len(jobs)} jobs")
                 print(f"DEBUG: Top 3 job scores: {[(job.role, job.match_score) for job in jobs[:3]]}")
             else:
-                print("DEBUG: No application found or no resume text in application")
+                print("DEBUG: No resume text available - user needs to upload resume or apply to a job")
                 for job in jobs:
                     job.match_score = 0
                     

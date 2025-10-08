@@ -20,59 +20,43 @@ def _get_snippet(text, term, radius=40):
 def _generate_detailed_explanation(final_percentage, semantic_score, keyword_score, cosine_raw, bm25_raw, coverage, term_count, candidate_name, job_role, top_terms):
     """
     Generate a detailed, human-readable explanation of the matching score with scoring breakdown
+    Uses the same style as user matchmaking feature
     """
-    explanation_parts = []
-    
     # Calculate component scores using raw values
     cosine_points = cosine_raw * 70
     bm25_points = bm25_raw * 30
-    
-    # Scoring methodology breakdown
-    explanation_parts.append("Match Analysis Summary")
-    explanation_parts.append("")
-    
-    # Score-based interpretation using the calculated final score
     calculated_final_score = cosine_points + bm25_points
     
+    # Generate summary insights using the same format as matchmaking
     if calculated_final_score > 80:
-        explanation_parts.append(f"{candidate_name} demonstrates excellent alignment with the {job_role} position.")
-        explanation_parts.append(f"Total Score: {calculated_final_score:.1f} points - Strong compatibility across both semantic understanding and keyword matching.")
-    elif calculated_final_score > 60:
-        explanation_parts.append(f"{candidate_name} shows good compatibility with the {job_role} requirements.")
-        explanation_parts.append(f"Total Score: {calculated_final_score:.1f} points - Solid relevant experience.")
-    elif calculated_final_score > 40:
-        explanation_parts.append(f"{candidate_name} presents moderate alignment with the {job_role} position.")
-        explanation_parts.append(f"Total Score: {calculated_final_score:.1f} points - Some relevant qualifications worth exploring.")
-    elif calculated_final_score > 0:
-        explanation_parts.append(f"{candidate_name} shows limited alignment with the {job_role} requirements.")
-        explanation_parts.append(f"Total Score: {calculated_final_score:.1f} points - Minimal overlap with job requirements.")
+        level = "Excellent"
+        recommendation = "Highly recommended - strong alignment with job requirements"
+    elif calculated_final_score > 65:
+        level = "Strong"
+        recommendation = "Recommended - good match with solid relevant experience"
+    elif calculated_final_score > 50:
+        level = "Good"
+        recommendation = "Consider interviewing - moderate match with relevant qualifications"
+    elif calculated_final_score > 35:
+        level = "Moderate"
+        recommendation = "Review carefully - limited match, requires detailed evaluation"
     else:
-        explanation_parts.append(f"{candidate_name} shows very limited alignment with the {job_role} requirements.")
-        explanation_parts.append(f"Total Score: {calculated_final_score:.1f} points - Significant gaps in required qualifications.")
+        level = "Limited"
+        recommendation = "Low match - minimal alignment with job requirements"
+        
+    insights = [
+        f"{level} match with an overall score of {calculated_final_score:.1f} points",
+        f"Semantic similarity contributes {cosine_points:.1f} points (content understanding)",
+        f"Keyword matching contributes {bm25_points:.1f} points (specific terms)",
+        f"Found {term_count} matching terms between candidate resume and job description",
+        f"Candidate resume covers {coverage*100:.1f}% of the key terms in the job posting"
+    ]
     
-    explanation_parts.append("")
-    
-    # Simple score breakdown
-    explanation_parts.append("Score Breakdown:")
-    explanation_parts.append(f"• Semantic Match: {cosine_points:.1f} points (content similarity)")
-    explanation_parts.append(f"• Keyword Match: {bm25_points:.1f} points (specific terms)")
-    explanation_parts.append("")
-    
-    # Coverage explanation
-    coverage_percent = coverage * 100
-    if coverage_percent > 60:
-        explanation_parts.append(f"Coverage: {coverage_percent:.1f}% of job requirements (comprehensive match)")
-    elif coverage_percent > 40:
-        explanation_parts.append(f"Coverage: {coverage_percent:.1f}% of job requirements (moderate match)")
-    else:
-        explanation_parts.append(f"Coverage: {coverage_percent:.1f}% of job requirements (limited match)")
-    
-    # Top matching terms
-    if top_terms and len(top_terms) > 0:
-        top_term_names = [term['term'] for term in top_terms[:3]]
-        explanation_parts.append(f"Key matching areas: {', '.join(top_term_names)}")
-    
-    return "\n".join(explanation_parts)
+    return {
+        'insights': insights,
+        'recommendation': recommendation,
+        'scoring_explanation': f"Score calculated using: (Cosine Similarity × 70) + (BM25 Score × 30) = ({cosine_raw:.3f} × 70) + ({bm25_raw:.3f} × 30) = {calculated_final_score:.1f} points"
+    }
 
 def _generate_recommendation_reasoning(score, term_count):
     """
@@ -192,45 +176,65 @@ def explain_shortlist(application_id):
         tokenized_resume = resume_text.lower().split()
         tokenized_job = job_text.lower().split()
 
-        # Calculate hybrid scores (semantic + keyword matching)
-        from sentence_transformers import SentenceTransformer
-        from sklearn.metrics.pairwise import cosine_similarity
-        import numpy as np
-        
-        # Initialize SentenceTransformer model
+        # Calculate hybrid scores using the same matching service as user matchmaking
         try:
-            model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-        except Exception:
-            model = None
+            from matching_service import get_matching_service
+            ms = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
             
-        # Calculate semantic similarity score (cosine similarity)
-        semantic_score = 0.5  # Default fallback
-        if model:
+            # Calculate scores using the same methods as user matchmaking
+            job_desc = f"{job.role} {job.description}"
+            cosine_scores = ms._get_cosine_similarity_scores(resume_text, [job_desc])
+            bm25_scores = ms._get_bm25_scores(resume_text, [job_desc])
+            
+            # Get raw scores
+            semantic_score = cosine_scores[0]  # Already 0-1 range
+            bm25_raw_score = bm25_scores[0]
+            
+            # Normalize BM25 score using the same method as matchmaking
+            bm25_normalized = ms._normalize_scores([bm25_raw_score])[0]
+            
+            print(f"DEBUG: Using matching service for consistent scoring")
+            print(f"DEBUG: Cosine score: {semantic_score} -> {semantic_score * 70:.1f} points")
+            print(f"DEBUG: BM25 raw: {bm25_raw_score} -> normalized: {bm25_normalized:.3f} -> {bm25_normalized * 30:.1f} points")
+            
+        except Exception as e:
+            print(f"WARNING: Failed to use matching service, falling back to manual calculation: {e}")
+            # Fallback to manual calculation
+            from sentence_transformers import SentenceTransformer
+            from sklearn.metrics.pairwise import cosine_similarity
+            import numpy as np
+            
+            # Initialize SentenceTransformer model
             try:
-                job_embedding = model.encode([job_text])
-                resume_embedding = model.encode([resume_text])
-                semantic_score = float(cosine_similarity(job_embedding, resume_embedding)[0][0])
-            except Exception as e:
-                print(f"Error calculating semantic similarity: {e}")
+                model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+            except Exception:
+                model = None
+                
+            # Calculate semantic similarity score (cosine similarity)
+            semantic_score = 0.5  # Default fallback
+            if model:
+                try:
+                    job_embedding = model.encode([job_text])
+                    resume_embedding = model.encode([resume_text])
+                    semantic_score = float(cosine_similarity(job_embedding, resume_embedding)[0][0])
+                except Exception as e:
+                    print(f"Error calculating semantic similarity: {e}")
 
-        # BM25 index on resume corpus for keyword matching (same as matching service)
-        tokenized_resume_corpus = [tokenized_resume]  # Create corpus with one resume
-        bm25 = BM25Okapi(tokenized_resume_corpus)
-
-        # Calculate keyword matching score (BM25) using job tokens as query
-        bm25_raw_scores = bm25.get_scores(tokenized_job)
-        bm25_raw_score = float(bm25_raw_scores[0]) if len(bm25_raw_scores) > 0 else 0
+            # BM25 calculation fallback
+            tokenized_resume_corpus = [tokenized_resume]
+            bm25 = BM25Okapi(tokenized_resume_corpus)
+            bm25_raw_scores = bm25.get_scores(tokenized_job)
+            bm25_raw_score = float(bm25_raw_scores[0]) if len(bm25_raw_scores) > 0 else 0
+            
+            # Normalize BM25 score to 0-1 range
+            def normalize_bm25_score(score):
+                bm25_min, bm25_max = -20.0, 15.0
+                normalized = (score - bm25_min) / (bm25_max - bm25_min)
+                return max(0, min(1, normalized))
+            
+            bm25_normalized = normalize_bm25_score(bm25_raw_score)
         
-        # Normalize BM25 score to 0-1 range to prevent negative final scores
-        def normalize_bm25_score(score):
-            # Based on observed BM25 scores, typical range is around -20 to +15
-            bm25_min, bm25_max = -20.0, 15.0
-            normalized = (score - bm25_min) / (bm25_max - bm25_min)
-            return max(0, min(1, normalized))
-        
-        bm25_normalized = normalize_bm25_score(bm25_raw_score)
-        
-        # Calculate final score using the NEW scoring methodology:
+        # Calculate final score using the EXACT same methodology as user matchmaking:
         # Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
         cosine_points = semantic_score * 70          # Cosine score (0-1) × 70 = 0-70 points
         bm25_points = bm25_normalized * 30           # Normalized BM25 (0-1) × 30 = 0-30 points
@@ -243,37 +247,51 @@ def explain_shortlist(application_id):
         # Use the final match score as the overall score for compatibility
         overall_score = final_match_score
 
-        # Per-term contributions (using original BM25 instance for term analysis)
-        term_bm25 = BM25Okapi([tokenized_resume])  # BM25 for individual term scoring
-        term_scores = {}
-        for term in set(tokenized_job):
+        # Calculate matching terms using the same approach as user matchmaking
+        job_desc = f"{job.role} {job.description}"
+        
+        # Get key terms from both documents (same as matchmaking)
+        resume_terms = set(resume_text.lower().split())
+        job_terms = set(job_desc.lower().split())
+        
+        # Find matching terms
+        matching_terms = resume_terms.intersection(job_terms)
+        formatted_terms = []
+        
+        # Analyze each matching term (same as matchmaking approach)
+        for term in matching_terms:
             if len(term) < 2:
                 continue
-            try:
-                score = float(term_bm25.get_scores([term])[0])
-            except Exception:
-                score = 0.0
-            if score > 0 and term in " ".join(tokenized_resume):
-                term_scores[term] = score
-
-        # Top 10 contributing terms
-        top_terms = heapq.nlargest(10, term_scores.items(), key=lambda x: x[1])
-        formatted_terms = []
-        for term, score in top_terms:
-            job_count = tokenized_job.count(term)
-            resume_count = tokenized_resume.count(term)
-            snippet = _get_snippet(resume_text, term)
+                
+            # Get term context
+            resume_snippet = _get_snippet(resume_text, term)
+            job_snippet = _get_snippet(job_desc, term)
+            
+            # Count occurrences
+            resume_count = resume_text.lower().count(term)
+            job_count = job_desc.lower().count(term)
+            
             formatted_terms.append({
                 'term': term,
-                'contribution': float(score),
-                'job_count': job_count,
+                'resume_context': resume_snippet,
+                'job_context': job_snippet,
                 'resume_count': resume_count,
-                'resume_snippet': snippet
+                'job_count': job_count,
+                'contribution': resume_count + job_count,  # Simple contribution calculation
+                'resume_snippet': resume_snippet   # Keep for backwards compatibility
             })
 
-        # Coverage: how much of the job description is represented in the resume
-        matched_tokens = sum(1 for t in set(tokenized_job) if t in tokenized_resume)
-        token_coverage = matched_tokens / max(1, len(set(tokenized_job)))
+        # Sort by contribution (frequency) and take top 10
+        formatted_terms.sort(key=lambda x: x['contribution'], reverse=True)
+        formatted_terms = formatted_terms[:10]
+
+        # Calculate coverage metrics (same as matchmaking)
+        resume_token_count = len(resume_terms)
+        matching_token_count = len(matching_terms)
+        token_coverage = matching_token_count / max(1, resume_token_count)
+        
+        print(f"DEBUG: Found {matching_token_count} matching terms out of {resume_token_count} resume terms")
+        print(f"DEBUG: Token coverage: {token_coverage*100:.1f}%")
 
         # Enhanced recommendation logic using the new scoring methodology
         if final_match_score > 80:
@@ -308,8 +326,8 @@ def explain_shortlist(application_id):
             'total_resume_terms': len(set(tokenized_resume))
         }
 
-        # Generate detailed explanation
-        detailed_explanation = _generate_detailed_explanation(
+        # Generate detailed explanation using the same style as matchmaking
+        detailed_explanation_data = _generate_detailed_explanation(
             final_match_score, semantic_score, bm25_normalized, semantic_score, bm25_normalized, token_coverage, len(formatted_terms), 
             user.first_name, job.role, formatted_terms[:5]
         )
@@ -326,22 +344,24 @@ def explain_shortlist(application_id):
                 'position': job.role,
                 'department_cluster': job.cluster_id
             },
-            'score_breakdown': score_breakdown,
-            'matching_analysis': {
-                'final_match_score': round(final_match_score, 1),
-                'cosine_raw_score': round(semantic_score, 3),
-                'bm25_raw_score': round(bm25_raw_score, 3),
+            'scores': {
+                'overall': round(final_match_score, 1),
                 'cosine_points': round(cosine_points, 1),
                 'bm25_points': round(bm25_points, 1),
-                'key_matching_terms': formatted_terms,
-                'token_coverage': round(token_coverage, 3),
-                'detailed_explanation': detailed_explanation,
-                'explanation': f"Candidate {user.full_name} achieved {round(final_match_score, 1)} points total score based on the new scoring methodology: (Cosine Similarity × 70) + (BM25 Score × 30)."
+                'cosine_raw': round(semantic_score, 3),
+                'bm25_raw': round(bm25_raw_score, 3),
+                'bm25_normalized': round(bm25_normalized, 3),
+                'semantic_weight': 70,
+                'keyword_weight': 30
             },
-            'recommendation': {
-                'status': recommendation_status,
-                'reasoning': _generate_recommendation_reasoning(final_match_score, len(formatted_terms))
-            }
+            'coverage': {
+                'matching_terms': len(formatted_terms),
+                'percentage': round(token_coverage * 100, 1)
+            },
+            'insights': detailed_explanation_data['insights'],
+            'recommendation': detailed_explanation_data['recommendation'],
+            'recommendation_reasoning': _generate_recommendation_reasoning(final_match_score, len(formatted_terms)),
+            'scoring_explanation': detailed_explanation_data['scoring_explanation']
         }
 
         return jsonify(response), 200

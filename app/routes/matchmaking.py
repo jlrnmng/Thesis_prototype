@@ -38,15 +38,34 @@ def get_job_matches():
     try:
         user_id = session['user_id']
 
-        # Get user's most recent application
+        # Get resume text - try from application first, then from uploaded file
+        user_resume_text = None
+        
+        # First, try to get resume text from the user's most recent application
         latest_application = Application.query.filter_by(
             user_id=user_id
         ).order_by(Application.submission_date.desc()).first()
 
-        if not latest_application:
-            return jsonify({'error': 'No applications found for this user'}), 404
+        if latest_application and latest_application.resume_text:
+            user_resume_text = latest_application.resume_text
+        else:
+            # Try to get resume text from uploaded file
+            from app.models import User
+            from app.utils.resume_extractor import extract_resume_text
+            import os
+            
+            user = User.query.get(user_id)
+            if user and user.resume:
+                upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+                resume_path = os.path.join(upload_folder, user.resume)
+                if os.path.exists(resume_path):
+                    try:
+                        user_resume_text = extract_resume_text(resume_path, preprocess=True)
+                    except Exception as e:
+                        print(f"Failed to extract resume text: {e}")
 
-        user_resume_text = latest_application.resume_text or ""
+        if not user_resume_text or len(user_resume_text.strip()) == 0:
+            return jsonify({'error': 'No resume text available. Please upload a resume or apply to a job first.'}), 404
 
         # Get all active jobs
         jobs = Job.query.filter_by(is_active=True).all()
@@ -91,17 +110,40 @@ def explain_matchmaking(job_id):
         user_id = session['user_id']
         print(f"DEBUG: User ID: {user_id}")
 
-        # Get user's most recent application
+        # Get resume text - try from application first, then from uploaded file
+        user_resume_text = None
+        
+        # First, try to get resume text from the user's most recent application
         latest_application = Application.query.filter_by(
             user_id=user_id
         ).order_by(Application.submission_date.desc()).first()
 
-        if not latest_application:
-            print(f"DEBUG: No applications found for user {user_id}")
-            return jsonify({'error': 'No applications found for this user'}), 404
+        if latest_application and latest_application.resume_text:
+            user_resume_text = latest_application.resume_text
+            print(f"DEBUG: Resume text from application: {len(user_resume_text)} chars")
+        else:
+            print(f"DEBUG: No applications found for user {user_id}, trying uploaded resume")
+            
+            # Try to get resume text from uploaded file
+            from app.models import User
+            from app.utils.resume_extractor import extract_resume_text
+            import os
+            
+            user = User.query.get(user_id)
+            if user and user.resume:
+                print(f"DEBUG: Trying to extract from uploaded resume: {user.resume}")
+                upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+                resume_path = os.path.join(upload_folder, user.resume)
+                if os.path.exists(resume_path):
+                    try:
+                        user_resume_text = extract_resume_text(resume_path, preprocess=True)
+                        print(f"DEBUG: Extracted resume text: {len(user_resume_text)} chars")
+                    except Exception as e:
+                        print(f"DEBUG: Failed to extract resume text: {e}")
 
-        user_resume_text = latest_application.resume_text or ""
-        print(f"DEBUG: Resume text length: {len(user_resume_text)}")
+        if not user_resume_text or len(user_resume_text.strip()) == 0:
+            print(f"DEBUG: No resume text available for user {user_id}")
+            return jsonify({'error': 'No resume text available. Please upload a resume or apply to a job first.'}), 404
 
         # Get the job
         job = Job.query.get_or_404(job_id)

@@ -776,18 +776,19 @@
     }
 
     function formatExplanation(data) {
-      const matchingAnalysis = data.matching_analysis || {};
-      const scoreBreakdown = data.score_breakdown || {};
-      const recommendation = data.recommendation || {};
+      // Use new response format (insights, recommendation, scores, etc.)
+      const scores = data.scores || {};
       const candidateDetails = data.candidate_details || {};
+      const insights = data.insights || [];
+      const recommendation = data.recommendation || '';
+      const scoringExplanation = data.scoring_explanation || '';
+      const coverage = data.coverage || {};
       
-      // Get scores from the new scoring structure
-      const finalMatchScore = scoreBreakdown.final_match_score || matchingAnalysis.final_match_score || 0;
-      const cosinePoints = scoreBreakdown.cosine_points || matchingAnalysis.cosine_points || 0;
-      const bm25Points = scoreBreakdown.bm25_points || matchingAnalysis.bm25_points || 0;
-      const keyTerms = matchingAnalysis.key_matching_terms || [];
-      const tokenCoverage = (matchingAnalysis.token_coverage || 0) * 100;
-      const detailedExplanation = matchingAnalysis.detailed_explanation || '';
+      // Get scores from the new format
+      const finalMatchScore = scores.overall || 0;
+      const cosinePoints = scores.cosine_points || 0;
+      const bm25Points = scores.bm25_points || 0;
+      const coveragePercentage = coverage.percentage || 0;
       
       // Determine score tier and color scheme
       const getScoreTier = (score) => {
@@ -800,19 +801,10 @@
       
       const scoreTier = getScoreTier(finalMatchScore);
       
-      // Format key matching terms with better styling
-      const termsHTML = keyTerms.slice(0, 6).map(term => 
-        `<div class="term-card" style="background: #ffffff; border: 1px solid #e9ecef; border-radius: 8px; padding: 12px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span class="term-name" style="font-weight: 600; color: #2c3e50; font-size: 14px;">${term.term}</span>
-            <span class="term-score" style="background: #e7f3ff; color: #004085; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">
-              ${term.contribution.toFixed(1)} pts
-            </span>
-          </div>
-          ${term.resume_snippet ? 
-            `<div class="term-snippet" style="color: #6c757d; font-size: 12px; font-style: italic; background: #f8f9fa; padding: 6px 8px; border-radius: 4px; border-left: 3px solid #28a745;">
-              "${term.resume_snippet}"
-            </div>` : ''}
+      // Format insights as structured explanation
+      const insightsHTML = insights.map(insight => 
+        `<div style="background: #f8f9fa; border-left: 4px solid #007bff; padding: 12px; margin-bottom: 8px; border-radius: 4px;">
+          <span style="color: #495057; font-size: 14px; line-height: 1.5;">• ${insight}</span>
         </div>`
       ).join('');
       
@@ -829,9 +821,19 @@
               finalMatchScore >= 35 ? '⚠️ Limited Match' : '❌ Poor Match'}
           </div>
           <div style="color: #6c757d; font-size: 14px; line-height: 1.4;">
-            ${detailedExplanation || matchingAnalysis.explanation || 'AI-powered matching analysis completed.'}
+            ${recommendation || 'AI-powered matching analysis completed.'}
           </div>
         </div>
+
+        ${insightsHTML ? `
+        <div class="insights-section" style="margin-bottom: 25px;">
+          <div style="display: flex; align-items: center; margin-bottom: 15px;">
+            <span style="font-size: 18px; margin-right: 8px;">📊</span>
+            <h5 style="margin: 0; color: #2c3e50; font-size: 16px; font-weight: 600;">Match Analysis Insights</h5>
+          </div>
+          ${insightsHTML}
+        </div>
+        ` : ''}
 
         <div class="score-breakdown-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px;">
           <div class="score-card" style="background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%); border: 1px solid #2196f3; border-radius: 10px; padding: 16px; text-align: center;">
@@ -852,24 +854,12 @@
           
           <div class="score-card" style="background: linear-gradient(135deg, #fff3e0 0%, #ffffff 100%); border: 1px solid #ff9800; border-radius: 10px; padding: 16px; text-align: center;">
             <div style="font-size: 24px; font-weight: 700; color: #f57c00; margin-bottom: 5px;">
-              📊 ${(scoreBreakdown.token_coverage_percentage || tokenCoverage).toFixed(0)}%
+              📊 ${coveragePercentage.toFixed(0)}%
             </div>
             <div style="font-size: 12px; color: #424242; font-weight: 600; margin-bottom: 3px;">JOB COVERAGE</div>
             <div style="font-size: 11px; color: #757575;">Requirements Met</div>
           </div>
         </div>
-        
-        ${keyTerms.length > 0 ? `
-        <div class="matching-terms-section" style="margin-bottom: 25px;">
-          <div style="display: flex; align-items: center; margin-bottom: 15px;">
-            <span style="font-size: 18px; margin-right: 8px;">🎯</span>
-            <h5 style="margin: 0; color: #2c3e50; font-size: 16px; font-weight: 600;">Key Matching Terms</h5>
-          </div>
-          <div class="terms-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
-            ${termsHTML}
-          </div>
-        </div>
-        ` : ''}
         
         <div class="recommendation-section" style="background: ${scoreTier.bgColor}; border: 1px solid ${scoreTier.color}; border-radius: 10px; padding: 20px;">
           <div style="display: flex; align-items: center; margin-bottom: 15px;">
@@ -877,19 +867,15 @@
             <h5 style="margin: 0; color: #2c3e50; font-size: 16px; font-weight: 600;">AI Recommendation</h5>
           </div>
           <div class="recommendation-content">
-            <div class="status-badge" style="display: inline-flex; align-items: center; padding: 8px 16px; border-radius: 20px; font-weight: 600; font-size: 14px; margin-bottom: 12px;
-              ${recommendation.status === 'Highly Recommended' ? 'background: #28a745; color: white;' : 
-                recommendation.status === 'Recommended' ? 'background: #007bff; color: white;' :
-                recommendation.status === 'Consider' ? 'background: #ffc107; color: #212529;' : 
-                'background: #dc3545; color: white;'}">
-              ${recommendation.status === 'Highly Recommended' ? '⭐ ' : 
-                recommendation.status === 'Recommended' ? '👍 ' :
-                recommendation.status === 'Consider' ? '🤔 ' : '⚠️ '}
-              ${recommendation.status || 'Under Review'}
+            <div style="color: #495057; line-height: 1.6; font-size: 14px; margin-bottom: 12px;">
+              ${recommendation || 'This candidate has been evaluated using our hybrid AI matching system.'}
             </div>
-            <div style="color: #495057; line-height: 1.6; font-size: 14px;">
-              ${recommendation.reasoning || 'This candidate has been evaluated using our hybrid AI matching system that analyzes both semantic similarity and keyword relevance to provide comprehensive assessment.'}
+            ${scoringExplanation ? `
+            <div style="background: #f8f9fa; border-radius: 6px; padding: 12px; font-family: 'Courier New', monospace; font-size: 13px; color: #495057; border-left: 4px solid #6c757d;">
+              <strong>Scoring Formula:</strong><br>
+              ${scoringExplanation}
             </div>
+            ` : ''}
           </div>
         </div>
       `;
