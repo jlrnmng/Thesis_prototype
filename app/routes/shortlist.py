@@ -28,49 +28,49 @@ def _generate_detailed_explanation(final_percentage, semantic_score, keyword_sco
     bm25_points = bm25_raw * 30
     
     # Scoring methodology breakdown
-    explanation_parts.append("**Match Analysis Summary**")
+    explanation_parts.append("Match Analysis Summary")
     explanation_parts.append("")
     
     # Score-based interpretation using the calculated final score
     calculated_final_score = cosine_points + bm25_points
     
     if calculated_final_score > 80:
-        explanation_parts.append(f"**{candidate_name}** demonstrates **excellent alignment** with the {job_role} position.")
-        explanation_parts.append(f"**Total Score: {calculated_final_score:.1f} points** - Strong compatibility across both semantic understanding and keyword matching.")
+        explanation_parts.append(f"{candidate_name} demonstrates excellent alignment with the {job_role} position.")
+        explanation_parts.append(f"Total Score: {calculated_final_score:.1f} points - Strong compatibility across both semantic understanding and keyword matching.")
     elif calculated_final_score > 60:
-        explanation_parts.append(f"**{candidate_name}** shows **good compatibility** with the {job_role} requirements.")
-        explanation_parts.append(f"**Total Score: {calculated_final_score:.1f} points** - Solid relevant experience.")
+        explanation_parts.append(f"{candidate_name} shows good compatibility with the {job_role} requirements.")
+        explanation_parts.append(f"Total Score: {calculated_final_score:.1f} points - Solid relevant experience.")
     elif calculated_final_score > 40:
-        explanation_parts.append(f"**{candidate_name}** presents **moderate alignment** with the {job_role} position.")
-        explanation_parts.append(f"**Total Score: {calculated_final_score:.1f} points** - Some relevant qualifications worth exploring.")
+        explanation_parts.append(f"{candidate_name} presents moderate alignment with the {job_role} position.")
+        explanation_parts.append(f"Total Score: {calculated_final_score:.1f} points - Some relevant qualifications worth exploring.")
     elif calculated_final_score > 0:
-        explanation_parts.append(f"**{candidate_name}** shows **limited alignment** with the {job_role} requirements.")
-        explanation_parts.append(f"**Total Score: {calculated_final_score:.1f} points** - Minimal overlap with job requirements.")
+        explanation_parts.append(f"{candidate_name} shows limited alignment with the {job_role} requirements.")
+        explanation_parts.append(f"Total Score: {calculated_final_score:.1f} points - Minimal overlap with job requirements.")
     else:
-        explanation_parts.append(f"**{candidate_name}** shows **very limited alignment** with the {job_role} requirements.")
-        explanation_parts.append(f"**Total Score: {calculated_final_score:.1f} points** - Significant gaps in required qualifications.")
+        explanation_parts.append(f"{candidate_name} shows very limited alignment with the {job_role} requirements.")
+        explanation_parts.append(f"Total Score: {calculated_final_score:.1f} points - Significant gaps in required qualifications.")
     
     explanation_parts.append("")
     
     # Simple score breakdown
-    explanation_parts.append("**Score Breakdown:**")
-    explanation_parts.append(f"• **Semantic Match:** {cosine_points:.1f} points (content similarity)")
-    explanation_parts.append(f"• **Keyword Match:** {bm25_points:.1f} points (specific terms)")
+    explanation_parts.append("Score Breakdown:")
+    explanation_parts.append(f"• Semantic Match: {cosine_points:.1f} points (content similarity)")
+    explanation_parts.append(f"• Keyword Match: {bm25_points:.1f} points (specific terms)")
     explanation_parts.append("")
     
     # Coverage explanation
     coverage_percent = coverage * 100
     if coverage_percent > 60:
-        explanation_parts.append(f"**Coverage:** {coverage_percent:.1f}% of job requirements (comprehensive match)")
+        explanation_parts.append(f"Coverage: {coverage_percent:.1f}% of job requirements (comprehensive match)")
     elif coverage_percent > 40:
-        explanation_parts.append(f"**Coverage:** {coverage_percent:.1f}% of job requirements (moderate match)")
+        explanation_parts.append(f"Coverage: {coverage_percent:.1f}% of job requirements (moderate match)")
     else:
-        explanation_parts.append(f"**Coverage:** {coverage_percent:.1f}% of job requirements (limited match)")
+        explanation_parts.append(f"Coverage: {coverage_percent:.1f}% of job requirements (limited match)")
     
     # Top matching terms
     if top_terms and len(top_terms) > 0:
         top_term_names = [term['term'] for term in top_terms[:3]]
-        explanation_parts.append(f"**Key matching areas:** {', '.join(top_term_names)}")
+        explanation_parts.append(f"Key matching areas: {', '.join(top_term_names)}")
     
     return "\n".join(explanation_parts)
 

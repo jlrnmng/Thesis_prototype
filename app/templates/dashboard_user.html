@@ -154,12 +154,19 @@
       padding: 14px 16px;
       margin-bottom: 12px;
       cursor: pointer;
-      transition: box-shadow 0.2s ease, transform 0.1s ease;
+      transition: box-shadow 0.2s ease, transform 0.1s ease, border-color 0.2s ease;
     }
     
     .job-card:hover {
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-shadow: 0 2px 8px rgba(46, 204, 176, 0.15);
       transform: translateY(-1px);
+      border-color: #2eccb0;
+    }
+    
+    .job-card.selected {
+      border-color: #2eccb0;
+      background: #f0fdf9;
+      box-shadow: 0 2px 8px rgba(46, 204, 176, 0.1);
     }
     
     .job-card h3 {
@@ -288,7 +295,7 @@
   <header>
     <div class="logo">
       <a href="/user_dashboard" style="text-decoration: none; color: inherit;">
-        <img src="/static/hirely_logo.png" alt="Hirely Logo">
+        <img src="{{ url_for('static', filename='Hirely_logo.png') }}" alt="Hirely Logo">
       </a>
     </div>
     <nav>
@@ -302,7 +309,7 @@
           </div>
           <div class="dropdown-content">
             <a href="/profile">Profile</a>
-            <a href="/settings">Settings</a>
+            <!-- <a href="/settings">Settings</a> -->
             <a href="/logout">Logout</a>
           </div>
         </div>
@@ -338,8 +345,23 @@
 
       <!-- Job Details -->
       <div class="job-details" id="jobDetails">
-        <h2>Select a Job</h2>
-        <p>Click on any job from the list to view full details and apply.</p>
+        <h2 style="display: flex; align-items: center; gap: 10px; color: #2c3e50;">
+          <span style="font-size: 24px;">🎯</span>
+          Welcome {{ user.first_name }}!
+        </h2>
+        <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; text-align: center;">
+          <h3 style="color: #2c3e50; margin-bottom: 12px;">Your Personalized Job Recommendations</h3>
+          <p style="color: #666; margin-bottom: 15px; line-height: 1.5;">
+            Our AI has analyzed your profile and found the best matching opportunities. 
+            Click on any job from the list to see detailed information and your compatibility score.
+          </p>
+          <div style="background: #e8f5e8; padding: 15px; border-radius: 6px; margin-top: 15px;">
+            <p style="margin: 0; color: #2c3e50; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span style="font-size: 16px;">💡</span>
+              <strong>Tip:</strong> Higher match scores indicate better alignment with your skills and experience
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   </main>
@@ -349,24 +371,143 @@
   </footer>
 
   <script>
+    function parseJobDescription(description) {
+      // Function to extract and format different sections from job description
+      const sections = {
+        overview: '',
+        responsibilities: '',
+        requirements: '',
+        qualifications: ''
+      };
+      
+      // Split description by common section headers (case insensitive)
+      const lines = description.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      let currentSection = 'overview';
+      
+      for (let line of lines) {
+        const lowerLine = line.toLowerCase();
+        
+        // Check for section headers
+        if (lowerLine.includes('responsibilities') || lowerLine.includes('duties') || lowerLine.includes('role')) {
+          currentSection = 'responsibilities';
+          continue;
+        } else if (lowerLine.includes('requirements') || lowerLine.includes('must have') || lowerLine.includes('required')) {
+          currentSection = 'requirements';
+          continue;
+        } else if (lowerLine.includes('qualifications') || lowerLine.includes('preferred') || lowerLine.includes('nice to have')) {
+          currentSection = 'qualifications';
+          continue;
+        }
+        
+        // Add content to current section
+        if (line.length > 0) {
+          sections[currentSection] += (sections[currentSection] ? '\n' : '') + line;
+        }
+      }
+      
+      return sections;
+    }
+    
+    function formatSection(title, content, icon, bgColor) {
+      if (!content || content.trim().length === 0) return '';
+      
+      // Convert newlines to list items if content contains bullet points or multiple lines
+      let formattedContent = content;
+      if (content.includes('\n') || content.includes('•') || content.includes('-')) {
+        const items = content.split('\n').filter(item => item.trim().length > 0);
+        formattedContent = '<ul style="margin: 0; padding-left: 20px;">' + 
+          items.map(item => `<li style="margin-bottom: 5px;">${item.replace(/^[•\-\*]\s*/, '')}</li>`).join('') + 
+          '</ul>';
+      } else {
+        formattedContent = `<p style="margin: 0; line-height: 1.6;">${content}</p>`;
+      }
+      
+      return `
+        <div style="background: ${bgColor}; border-radius: 8px; padding: 18px; margin-bottom: 16px; border-left: 4px solid ${icon === '🎯' ? '#2eccb0' : icon === '📋' ? '#007bff' : '#ffc107'};">
+          <h4 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 18px;">${icon}</span>
+            ${title}
+          </h4>
+          ${formattedContent}
+        </div>
+      `;
+    }
+
     function showJobDetails(jobId, title, description, matchScore) {
+      // Remove selected class from all job cards
+      document.querySelectorAll('.job-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      
+      // Add selected class to clicked card
+      event.target.closest('.job-card').classList.add('selected');
+      
+      // Parse the job description into sections
+      const sections = parseJobDescription(description);
+      
       const details = document.getElementById("jobDetails");
       
       let matchScoreHTML = '';
       if (matchScore && matchScore > 0) {
         matchScoreHTML = `
-          <div class="match-score-display">
-            <div class="score">${matchScore}%</div>
-            <div class="label">Match Score</div>
+          <div class="match-score-display" style="background: linear-gradient(135deg, #2eccb0 0%, #27b89f 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(46, 204, 176, 0.2);">
+            <div style="font-size: 36px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+              <span style="font-size: 24px;">🎯</span>
+              ${matchScore}%
+            </div>
+            <div style="font-size: 14px; opacity: 0.95; font-weight: 500;">AI Match Score</div>
+            <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">Based on your profile and experience</div>
           </div>
         `;
       }
       
       details.innerHTML = `
         ${matchScoreHTML}
-        <h2>${title}</h2>
-        <p>${description}</p>
-        <button class="apply-btn" onclick="applyToJob(${jobId})">Apply Now</button>
+        <h2 style="color: #2c3e50; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid #e9ecef; display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 24px;">💼</span>
+          ${title}
+        </h2>
+        
+        ${sections.overview ? `
+          <div style="background: #f8f9fa; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+            <h4 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 18px;">📝</span>
+              Job Overview
+            </h4>
+            <p style="margin: 0; line-height: 1.6; color: #444;">${sections.overview}</p>
+          </div>
+        ` : ''}
+        
+        ${formatSection('Key Responsibilities', sections.responsibilities, '🎯', '#e8f5e8')}
+        ${formatSection('Requirements', sections.requirements, '📋', '#e3f2fd')}
+        ${formatSection('Preferred Qualifications', sections.qualifications, '⭐', '#fff3e0')}
+        
+        ${!sections.responsibilities && !sections.requirements && !sections.qualifications ? `
+          <div style="background: #f8f9fa; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+            <h4 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 18px;">📝</span>
+              Job Description
+            </h4>
+            <p style="margin: 0; line-height: 1.6; color: #444;">${description}</p>
+          </div>
+        ` : ''}
+        
+        <div style="margin-top: 30px; padding: 24px; background: linear-gradient(135deg, #f0fdf9 0%, #ffffff 100%); border-radius: 10px; border: 1px solid #2eccb0; box-shadow: 0 2px 8px rgba(46, 204, 176, 0.1);">
+          <h4 style="margin: 0 0 12px 0; color: #2c3e50; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">🚀</span>
+            Ready to Apply?
+          </h4>
+          <p style="margin: 0 0 18px 0; color: #666; font-size: 14px; line-height: 1.5;">
+            ${matchScore && matchScore > 0 ? 
+              `With a ${matchScore}% match score, this position aligns well with your profile. Apply now to take the next step in your career!` :
+              'This position offers great opportunities for professional growth. Apply now to take the next step in your career!'
+            }
+          </p>
+          <button class="apply-btn" onclick="applyToJob(${jobId})" style="background: #2eccb0; color: white; border: none; border-radius: 6px; padding: 14px 28px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(46, 204, 176, 0.2);">
+            <span style="margin-right: 8px;">📤</span>
+            Apply Now
+          </button>
+        </div>
       `;
     }
 
@@ -380,13 +521,21 @@
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          alert('Application submitted successfully!');
+          alert('🎉 Application submitted successfully!');
+          // Update button to show applied state
+          const applyBtn = document.querySelector('.apply-btn');
+          if (applyBtn) {
+            applyBtn.innerHTML = '<span style="margin-right: 8px;">✅</span>Applied';
+            applyBtn.style.background = '#28a745';
+            applyBtn.disabled = true;
+            applyBtn.style.cursor = 'not-allowed';
+          }
         } else {
-          alert('Error: ' + data.error);
+          alert('❌ Error: ' + data.error);
         }
       })
       .catch(error => {
-        alert('An error occurred. Please try again.');
+        alert('⚠️ An error occurred. Please try again.');
         console.error('Error:', error);
       });
     }
@@ -403,6 +552,14 @@
     document.addEventListener("click", (event) => {
       if (!dropdown.contains(event.target) && event.target !== avatarBtn) {
         dropdown.classList.remove("active");
+      }
+    });
+
+    // Auto-select first job if available
+    document.addEventListener('DOMContentLoaded', function() {
+      const firstJob = document.querySelector('.job-card');
+      if (firstJob) {
+        firstJob.click();
       }
     });
   </script>

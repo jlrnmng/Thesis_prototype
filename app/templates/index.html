@@ -101,11 +101,17 @@
       padding: 14px 16px;
       margin-bottom: 12px;
       cursor: pointer;
-      transition: box-shadow 0.2s ease, transform 0.1s ease;
+      transition: box-shadow 0.2s ease, transform 0.1s ease, border-color 0.2s ease;
     }
     .job-card:hover {
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-shadow: 0 2px 8px rgba(46, 204, 176, 0.15);
       transform: translateY(-1px);
+      border-color: #2eccb0;
+    }
+    .job-card.selected {
+      border-color: #2eccb0;
+      background: #f0fdf9;
+      box-shadow: 0 2px 8px rgba(46, 204, 176, 0.1);
     }
     .job-card h3 {
       margin: 0 0 4px;
@@ -147,14 +153,40 @@
     }
 
     .flash-messages {
-      max-width: 600px;
-      margin: 0 auto;
+      max-width: 1100px;
+      margin: 0 auto 20px;
+      padding: 0 20px;
     }
 
     .alert {
-      border-radius: 10px;
+      border-radius: 6px;
       font-weight: 500;
       padding: 12px 18px;
+      margin-bottom: 10px;
+    }
+
+    .alert-success {
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+
+    .alert-error {
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+
+    .alert-info {
+      background-color: #d1ecf1;
+      border: 1px solid #bee5eb;
+      color: #0c5460;
+    }
+
+    .alert-warning {
+      background-color: #fff3cd;
+      border: 1px solid #ffeaa7;
+      color: #856404;
     }
 
 
@@ -174,11 +206,11 @@
   <header>
     <div class="logo">
       <a href="/" style="text-decoration: none; color: inherit;">
-        <img src="/static/hirely_logo.png" alt="Hirely Logo">
+        <img src="{{ url_for('static', filename='Hirely_logo.png') }}" alt="Hirely Logo">
       </a>
     </div>
     <nav>
-      <a href="#">Employers</a>
+      <!-- <a href="#">Employers</a> -->
       <a href="/login" class="signin-btn">Sign In</a>
       <a href="/admin_register">Employers/Post Job</a>
     </nav>
@@ -186,6 +218,17 @@
 
   <!-- Main Content -->
   <main>
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
     <div class="content-wrapper">
       <!-- Jobs List -->
       <div class="jobs-list">
@@ -205,8 +248,13 @@
 
       <!-- Job Details -->
       <div class="job-details" id="jobDetails">
-        <h2>Job Description</h2>
-        <p>Select a job from the list to view details here.</p>
+        <h2>Welcome to Hirely</h2>
+        <p>Select a job from the list on the left to view detailed information and apply.</p>
+        <div style="margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 6px; text-align: center;">
+          <h3 style="color: #2c3e50; margin-bottom: 10px;">Looking for your next opportunity?</h3>
+          <p style="color: #666; margin-bottom: 15px;">Browse through our available positions and find the perfect match for your skills.</p>
+          <a href="/register" style="background: #2eccb0; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: 500;">Get Started</a>
+        </div>
       </div>
     </div>
   </main>
@@ -216,13 +264,129 @@
   </footer>
 
   <script>
-    function showJobDetails(title, description) {
-      const details = document.getElementById("jobDetails");
-      details.innerHTML = `
-        <h2>${title}</h2>
-        <p>${description}</p>
+    function parseJobDescription(description) {
+      // Function to extract and format different sections from job description
+      const sections = {
+        overview: '',
+        responsibilities: '',
+        requirements: '',
+        qualifications: ''
+      };
+      
+      // Split description by common section headers (case insensitive)
+      const lines = description.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      let currentSection = 'overview';
+      
+      for (let line of lines) {
+        const lowerLine = line.toLowerCase();
+        
+        // Check for section headers
+        if (lowerLine.includes('responsibilities') || lowerLine.includes('duties') || lowerLine.includes('role')) {
+          currentSection = 'responsibilities';
+          continue;
+        } else if (lowerLine.includes('requirements') || lowerLine.includes('must have') || lowerLine.includes('required')) {
+          currentSection = 'requirements';
+          continue;
+        } else if (lowerLine.includes('qualifications') || lowerLine.includes('preferred') || lowerLine.includes('nice to have')) {
+          currentSection = 'qualifications';
+          continue;
+        }
+        
+        // Add content to current section
+        if (line.length > 0) {
+          sections[currentSection] += (sections[currentSection] ? '\n' : '') + line;
+        }
+      }
+      
+      return sections;
+    }
+    
+    function formatSection(title, content, icon, bgColor) {
+      if (!content || content.trim().length === 0) return '';
+      
+      // Convert newlines to list items if content contains bullet points or multiple lines
+      let formattedContent = content;
+      if (content.includes('\n') || content.includes('•') || content.includes('-')) {
+        const items = content.split('\n').filter(item => item.trim().length > 0);
+        formattedContent = '<ul style="margin: 0; padding-left: 20px;">' + 
+          items.map(item => `<li style="margin-bottom: 5px;">${item.replace(/^[•\-\*]\s*/, '')}</li>`).join('') + 
+          '</ul>';
+      } else {
+        formattedContent = `<p style="margin: 0; line-height: 1.6;">${content}</p>`;
+      }
+      
+      return `
+        <div style="background: ${bgColor}; border-radius: 8px; padding: 18px; margin-bottom: 16px; border-left: 4px solid ${icon === '🎯' ? '#2eccb0' : icon === '📋' ? '#007bff' : '#ffc107'};">
+          <h4 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 18px;">${icon}</span>
+            ${title}
+          </h4>
+          ${formattedContent}
+        </div>
       `;
     }
+
+    function showJobDetails(title, description) {
+      // Remove selected class from all job cards
+      document.querySelectorAll('.job-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      
+      // Add selected class to clicked card
+      event.target.closest('.job-card').classList.add('selected');
+      
+      // Parse the job description into sections
+      const sections = parseJobDescription(description);
+      
+      const details = document.getElementById("jobDetails");
+      details.innerHTML = `
+        <h2 style="color: #2c3e50; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid #e9ecef;">${title}</h2>
+        
+        ${sections.overview ? `
+          <div style="background: #f8f9fa; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+            <h4 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 18px;">📝</span>
+              Job Overview
+            </h4>
+            <p style="margin: 0; line-height: 1.6; color: #444;">${sections.overview}</p>
+          </div>
+        ` : ''}
+        
+        ${formatSection('Key Responsibilities', sections.responsibilities, '🎯', '#e8f5e8')}
+        ${formatSection('Requirements', sections.requirements, '📋', '#e3f2fd')}
+        ${formatSection('Preferred Qualifications', sections.qualifications, '⭐', '#fff3e0')}
+        
+        ${!sections.responsibilities && !sections.requirements && !sections.qualifications ? `
+          <div style="background: #f8f9fa; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+            <h4 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 18px;">📝</span>
+              Job Description
+            </h4>
+            <p style="margin: 0; line-height: 1.6; color: #444;">${description}</p>
+          </div>
+        ` : ''}
+        
+        <div style="margin-top: 30px; padding: 24px; background: linear-gradient(135deg, #f0fdf9 0%, #ffffff 100%); border-radius: 10px; border: 1px solid #2eccb0; box-shadow: 0 2px 8px rgba(46, 204, 176, 0.1);">
+          <h4 style="margin: 0 0 12px 0; color: #2c3e50; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">🚀</span>
+            Ready to Apply?
+          </h4>
+          <p style="margin: 0 0 18px 0; color: #666; font-size: 14px; line-height: 1.5;">Join our platform to apply for this position and discover personalized job recommendations powered by AI.</p>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <a href="/register" style="background: #2eccb0; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px; transition: background 0.2s;">Apply Now</a>
+            <a href="/login" style="background: transparent; color: #2eccb0; padding: 12px 24px; border: 2px solid #2eccb0; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px; transition: all 0.2s;">Sign In</a>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Auto-select first job if available
+    document.addEventListener('DOMContentLoaded', function() {
+      const firstJob = document.querySelector('.job-card');
+      if (firstJob) {
+        firstJob.click();
+      }
+    });
   </script>
 
 </body>
