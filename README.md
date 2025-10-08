@@ -60,6 +60,7 @@ Hirely/
 │       ├── decorators.py       # Route decorators
 │       ├── pdf_processor.py    # PDF handling utilities
 │       ├── resume_extractor.py # Resume text extraction
+│       ├── text_preprocessing.py # NLP preprocessing pipeline
 │       └── security.py         # Security utilities and decorators
 ├── chroma_storage/             # ChromaDB vector database storage
 ├── data/                       # ML models and data files
@@ -85,10 +86,11 @@ Hirely/
 
 ### 🤖 AI-Powered Matching
 - **Vector Embeddings**: Semantic understanding using SentenceTransformers
-- **Hybrid Scoring**: Combines cosine similarity (70%) and BM25 (30%)
+- **Unified Scoring Algorithm**: Consistent 70% cosine similarity + 30% BM25 across admin shortlisting and user matchmaking
+- **Advanced NLP Preprocessing**: Comprehensive text standardization with technical term normalization
 - **K-means Clustering**: Intelligent job categorization
-- **Real-time Recommendations**: Instant job suggestions based on resume content
-- **Match Explanations**: Transparent scoring and ranking explanations
+- **Real-time Recommendations**: Instant job suggestions based on preprocessed resume content
+- **Match Explanations**: Transparent scoring and ranking explanations with detailed analysis
 
 ### 👥 Multi-Admin System
 - **Complete Isolation**: Each admin operates in their own workspace
@@ -122,8 +124,9 @@ Hirely/
 
 ### AI/ML Components
 - **SentenceTransformers**: all-MiniLM-L6-v2 for embeddings
+- **Natural Language Processing**: Comprehensive text preprocessing with technical term standardization
 - **scikit-learn**: K-means clustering for job categorization
-- **BM25**: Traditional ranking algorithm
+- **BM25**: Traditional ranking algorithm for text similarity
 - **PyPDF2 & mammoth**: Document text extraction
 
 ### Frontend
@@ -131,7 +134,61 @@ Hirely/
 - **Styling**: Custom CSS with responsive design
 - **JavaScript**: Enhanced user interactions
 
-## 🧪 Testing
+## � Natural Language Processing
+
+### Text Preprocessing Pipeline
+The system includes a comprehensive NLP preprocessing pipeline that standardizes and enhances resume text for better matching accuracy:
+
+#### Key Features
+- **Technical Term Standardization**: Normalizes programming languages, frameworks, and tools
+- **Education Normalization**: Standardizes degree names and academic qualifications
+- **Privacy Protection**: Removes or masks personal information (emails, phone numbers, addresses)
+- **Text Cleaning**: Handles whitespace, special characters, and formatting inconsistencies
+- **Case Normalization**: Consistent text casing for better matching
+
+#### ResumeTextPreprocessor Class
+```python
+from app.utils.text_preprocessing import ResumeTextPreprocessor
+
+processor = ResumeTextPreprocessor()
+processed_text = processor.preprocess_resume_text(raw_text)
+```
+
+#### Processing Steps
+1. **Basic Cleaning**: Remove extra whitespace and normalize formatting
+2. **Technical Standardization**: Convert variations of tech terms to standard forms
+3. **Education Standardization**: Normalize degree and qualification names
+4. **Privacy Protection**: Remove sensitive personal information
+5. **Final Normalization**: Consistent casing and formatting
+
+### Migration and Data Processing
+- **Automatic Processing**: All uploaded resumes are automatically preprocessed
+- **Bulk Migration**: Existing resumes can be batch processed using migration scripts
+- **ChromaDB Integration**: Preprocessed text is stored in vector database for similarity matching
+
+## 🎯 Unified Scoring Algorithm
+
+### Scoring Formula
+The system uses a consistent scoring algorithm across both admin shortlisting and user matchmaking:
+
+**Final Score = (Cosine Similarity × 70%) + (BM25 Score × 30%)**
+
+#### Components
+- **Cosine Similarity (70%)**: Semantic understanding through vector embeddings
+- **BM25 Score (30%)**: Traditional keyword-based ranking
+- **Preprocessing**: Both components use standardized, preprocessed text
+
+#### Implementation
+- **Admin Shortlisting**: Ranks candidates for job postings
+- **User Matchmaking**: Recommends jobs to users based on their resume
+- **Detailed Explanations**: Provides breakdown of scoring components
+
+### Benefits
+- **Consistency**: Same algorithm ensures fair comparison across interfaces
+- **Transparency**: Users and admins see the same scoring logic
+- **Accuracy**: Combination of semantic and keyword matching improves relevance
+
+## �🧪 Testing
 
 ### Automated Tests
 ```bash
@@ -177,8 +234,11 @@ python scripts/import_data_to_chroma.py
 # Create sample job postings
 python scripts/create_test_jobs.py
 
-# Bulk add resumes to ChromaDB
+# Bulk add resumes to ChromaDB with preprocessing
 python scripts/bulk_add_resumes_to_chroma.py
+
+# Extract and preprocess existing resume texts
+python scripts/extract_existing_resume_texts.py
 ```
 
 ### Environment Verification
@@ -204,9 +264,9 @@ python scripts/test_matching.py
 
 ### Matching & Applications
 - `POST /api/matchmaking/match` - Get job matches for user
-- `GET /api/matchmaking/explain/<id>` - Get match explanation
+- `GET /api/matchmaking/explain/<id>` - Get detailed match explanation and scoring breakdown
 - `POST /api/applications/apply` - Apply to job
-- `GET /api/shortlist/<id>` - Get shortlisted candidates
+- `GET /api/shortlist/<id>` - Get shortlisted candidates with unified scoring
 
 ## 🏗️ Database Architecture
 
@@ -221,7 +281,7 @@ python scripts/test_matching.py
 - Users (Admin) → Jobs (One-to-Many via created_by)
 
 ### ChromaDB Collections
-- **Resumes**: Vector embeddings of resume content
+- **Resumes**: Vector embeddings of preprocessed resume content with NLP standardization
 - **Jobs**: Vector embeddings of job descriptions
 
 ## 🔐 Security Features
@@ -332,6 +392,6 @@ For technical support or questions:
 
 ---
 
-**Version**: 2.0.0 (Enterprise Security Release)
+**Version**: 2.1.0 (Enhanced NLP and Unified Scoring Release)
 **Last Updated**: October 2025
 **Maintainers**: Development Team

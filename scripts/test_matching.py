@@ -14,8 +14,8 @@ from pprint import pprint
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 def format_score(score):
-    """Format score as percentage"""
-    return f"{score:.1f}%"
+    """Format score as points (0-100 scale)"""
+    return f"{score:.1f} pts"
 
 def main():
     from app import create_app, db

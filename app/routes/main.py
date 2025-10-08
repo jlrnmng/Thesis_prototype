@@ -131,32 +131,39 @@ def user_dashboard():
     
     jobs = Job.query.filter_by(is_active=True).all()
     
-    if user.resume and MATCHING_ENABLED and RESUME_EXTRACTION_ENABLED:
+    print(f"DEBUG: MATCHING_ENABLED: {MATCHING_ENABLED}")
+    
+    if MATCHING_ENABLED:
         try:
-            upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-            resume_path = os.path.join(upload_folder, user.resume)
+            # Get user's most recent application to use the preprocessed resume text
+            latest_application = Application.query.filter_by(
+                user_id=user_id
+            ).order_by(Application.submission_date.desc()).first()
             
-            if os.path.exists(resume_path):
-                resume_text = extract_resume_text(resume_path)
+            print(f"DEBUG: Latest application found: {latest_application is not None}")
+            
+            if latest_application and latest_application.resume_text:
+                resume_text = latest_application.resume_text
+                print(f"DEBUG: Resume text length from application: {len(resume_text)}")
                 
-                if resume_text:
-                    matching_service = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
-                    job_rankings = matching_service.get_top_jobs_for_resume(
-                        resume_text, 
-                        jobs,
-                        top_n=len(jobs)
-                    )
-                    
-                    score_dict = {job_id: score for job_id, score in job_rankings}
-                    for job in jobs:
-                        job.match_score = round(score_dict.get(job.id, 0), 0)
-                    
-                    jobs.sort(key=lambda x: x.match_score, reverse=True)
-                    print(f"DEBUG: Calculated match scores for {len(jobs)} jobs")
-                else:
-                    for job in jobs:
-                        job.match_score = 0
+                matching_service = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
+                job_rankings = matching_service.get_top_jobs_for_resume(
+                    resume_text, 
+                    jobs,
+                    top_n=len(jobs)
+                )
+                
+                print(f"DEBUG: Job rankings: {job_rankings[:3]}")  # Show first 3 rankings
+                
+                score_dict = {job_id: score for job_id, score in job_rankings}
+                for job in jobs:
+                    job.match_score = round(score_dict.get(job.id, 0), 0)
+                
+                jobs.sort(key=lambda x: x.match_score, reverse=True)
+                print(f"DEBUG: Calculated match scores for {len(jobs)} jobs")
+                print(f"DEBUG: Top 3 job scores: {[(job.role, job.match_score) for job in jobs[:3]]}")
             else:
+                print("DEBUG: No application found or no resume text in application")
                 for job in jobs:
                     job.match_score = 0
                     
@@ -167,6 +174,7 @@ def user_dashboard():
             for job in jobs:
                 job.match_score = 0
     else:
+        print("DEBUG: Matching not enabled - setting all scores to 0")
         for job in jobs:
             job.match_score = 0
     
@@ -441,7 +449,8 @@ def apply_to_job(job_id):
             upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
             resume_path = os.path.join(upload_folder, user.resume)
             if os.path.exists(resume_path):
-                resume_text = extract_resume_text(resume_path)
+                # Extract resume text with NLP preprocessing enabled
+                resume_text = extract_resume_text(resume_path, preprocess=True)
         
         if not resume_text:
             resume_text = f"Resume for {user.full_name}"

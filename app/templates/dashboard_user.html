@@ -333,7 +333,7 @@
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
             <h3 style="margin: 0;">{{ job.role }}</h3>
             {% if job.match_score and job.match_score > 0 %}
-            <span class="match-badge">{{ job.match_score|int }}% Match</span>
+            <span class="match-badge">{{ job.match_score|int }} Score</span>
             {% endif %}
           </div>
           <p>{{ job.description[:80] }}...</p>
@@ -453,10 +453,13 @@
           <div class="match-score-display" style="background: linear-gradient(135deg, #2eccb0 0%, #27b89f 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(46, 204, 176, 0.2);">
             <div style="font-size: 36px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 10px;">
               <span style="font-size: 24px;">🎯</span>
-              ${matchScore}%
+              ${Math.round(matchScore)} Score
             </div>
             <div style="font-size: 14px; opacity: 0.95; font-weight: 500;">AI Match Score</div>
-            <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">Based on your profile and experience</div>
+            <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">Based on semantic similarity (70%) + keyword matching (30%)</div>
+            <button onclick="showMatchExplanation(${jobId})" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 8px 16px; font-size: 12px; cursor: pointer; margin-top: 10px; transition: all 0.2s;">
+              📊 View Detailed Analysis
+            </button>
           </div>
         `;
       }
@@ -509,6 +512,98 @@
           </button>
         </div>
       `;
+    }
+
+    function showMatchExplanation(jobId) {
+      // Show loading state
+      const explanationDiv = document.createElement('div');
+      explanationDiv.id = 'matchExplanation';
+      explanationDiv.style.cssText = 'margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #2eccb0;';
+      explanationDiv.innerHTML = '<div style="text-align: center; padding: 20px;"><span style="font-size: 18px;">🔄</span> Analyzing match...</div>';
+      
+      const detailsDiv = document.getElementById('jobDetails');
+      const existingExplanation = document.getElementById('matchExplanation');
+      if (existingExplanation) {
+        existingExplanation.remove();
+      }
+      detailsDiv.appendChild(explanationDiv);
+      
+      // Fetch detailed explanation
+      fetch(`/api/matchmaking/explain/${jobId}`)
+        .then(response => {
+          console.log('Response status:', response.status);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('Received data:', data);
+          if (data.error) {
+            explanationDiv.innerHTML = `<div style="color: #dc3545; text-align: center;">❌ ${data.error}</div>`;
+            return;
+          }
+          
+          const scores = data.scores;
+          const insights = data.insights;
+          const recommendation = data.recommendation;
+          const recommendationReasoning = data.recommendation_reasoning;
+          const scoringExplanation = data.scoring_explanation;
+          const matchingTerms = data.matching_terms.slice(0, 5); // Top 5 terms
+          
+          explanationDiv.innerHTML = `
+            <h3 style="color: #2c3e50; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+              <span>📊</span> Detailed Match Analysis
+            </h3>
+            
+            <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+              <h4 style="color: #495057; margin-bottom: 10px;">Score Breakdown</h4>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
+                <div style="text-align: center; padding: 10px; background: #e3f2fd; border-radius: 6px;">
+                  <div style="font-size: 20px; font-weight: bold; color: #1976d2;">${scores.cosine_points}</div>
+                  <div style="font-size: 12px; color: #666;">Semantic Points (70%)</div>
+                </div>
+                <div style="text-align: center; padding: 10px; background: #f3e5f5; border-radius: 6px;">
+                  <div style="font-size: 20px; font-weight: bold; color: #7b1fa2;">${scores.bm25_points}</div>
+                  <div style="font-size: 12px; color: #666;">Keyword Points (30%)</div>
+                </div>
+              </div>
+              <div style="font-size: 12px; color: #666; text-align: center;">
+                ${scoringExplanation}
+              </div>
+            </div>
+            
+            <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+              <h4 style="color: #495057; margin-bottom: 10px;">Key Matching Terms</h4>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                ${matchingTerms.map(term => `
+                  <span style="background: #e8f5e8; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                    ${term.term} (${term.resume_count}x)
+                  </span>
+                `).join('')}
+              </div>
+            </div>
+            
+            <div style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+              <h4 style="color: #495057; margin-bottom: 10px;">Insights</h4>
+              <ul style="margin: 0; padding-left: 20px;">
+                ${insights.map(insight => `<li style="margin-bottom: 5px; color: #555;">${insight}</li>`).join('')}
+              </ul>
+            </div>
+            
+            <div style="background: ${scores.overall > 65 ? '#d4edda' : scores.overall > 50 ? '#fff3cd' : '#f8d7da'}; 
+                        color: ${scores.overall > 65 ? '#155724' : scores.overall > 50 ? '#856404' : '#721c24'}; 
+                        padding: 15px; border-radius: 6px; border-left: 4px solid ${scores.overall > 65 ? '#28a745' : scores.overall > 50 ? '#ffc107' : '#dc3545'};">
+              <h4 style="margin-bottom: 10px;">Recommendation</h4>
+              <p style="margin-bottom: 5px; font-weight: 600;">${recommendation}</p>
+              <p style="margin: 0; font-size: 14px;">${recommendationReasoning}</p>
+            </div>
+          `;
+        })
+        .catch(error => {
+          console.error('Error fetching match explanation:', error);
+          explanationDiv.innerHTML = `<div style="color: #dc3545; text-align: center;">❌ Error loading detailed analysis: ${error.message}</div>`;
+        });
     }
 
     function applyToJob(jobId) {

@@ -1,0 +1,632 @@
+=== Application ID: 1 ===
+Original (1869 chars):
+Johnlerein Battung Manaog
+ Software Engineer | M.S. in Computer Science
+Email: johnlerein.manaog@example.com | Phone: +63 917 234 5678 | Location: Manila,
+Philippines
+Professional Summary
+Innovative software engineer with over 7 years of experience in full-stack development and
+cloud solutions. Holds a Master’s degree in Computer Science with research focused on
+distributed computing and AI integration. Passionate about building efficient, scalable systems
+and mentoring upcoming developers.
+Education
+M.S. in Computer Science, Ateneo de Manila University (2018 – 2020)
+B.S. in Software Engineering, University of the Philippines Diliman (2014 – 2018)
+Technical Skills
+Languages: Python, JavaScript, TypeScript, Java, C++
+Frameworks: React, Node.js, Flask, Django, Spring Boot
+Tools & Platforms: AWS, Docker, Kubernetes, Git, PostgreSQL, MongoDB
+Professional Experience
+Senior Software Engineer – CloudNova Technologies, Manila (2021 – Present)
+- Designed and maintained backend architecture for a data analytics platform with over 100K
+active users.
+- Implemented CI/CD pipelines and Docker-based deployments, improving release efficiency
+by 40%.
+- Collaborated with machine learning engineers to integrate predictive analytics modules.
+Software Engineer – NetFusion Labs, Quezon City (2018 – 2021)
+- Developed full-stack applications using Django and React for enterprise clients.
+- Improved API response times by 30% through optimized database queries and caching
+strategies.
+- Conducted code reviews and mentored junior developers.
+Projects
+FleetIQ – Smart fleet management system using IoT sensors and predictive maintenance
+algorithms.
+HealthConnect – Secure healthcare management app for teleconsultation and record
+tracking.
+Certifications
+AWS Certified Solutions Architect – Associate
+Google Professional Cloud Developer
+References
+
+Available upon request.
+
+Processed (1814 chars):
+johnlerein battung manaog software engineer m. s. in computer science email: [email] phone: +63 [phone] location: manila, philippines professional summary innovative software engineer with over 7 years of experience in full-stack development and cloud solutions. holds a master's degree in computer science with research focused on distributed computing and ai integration. passionate about building efficient, scalable systems and mentoring upcoming developers. education m. s. in computer science, ateneo de manila university ( 2018 2020 ) b. s. in software engineering, university of the philippines diliman ( 2014 2018 ) technical skills languages: python, JavaScript, TypeScript, java, c++ frameworks: react, Node. js, flask, django, spring boot tools platforms: aws, docker, kubernetes, git, PostgreSQL, MongoDB professional experience senior software engineer cloudnova technologies, manila ( 2021 present ) designed and maintained backend architecture for a data analytics platform with over 100k active users. implemented ci/cd pipelines and docker-based deployments, improving release efficiency by 40%. collaborated with machine learning engineers to integrate predictive analytics modules. software engineer netfusion labs, quezon city ( 2018 2021 ) developed full-stack applications using django and react for enterprise clients. improved api response times by 30% through optimized database queries and caching strategies. conducted code reviews and mentored junior developers. projects fleetiq smart fleet management system using iot sensors and predictive maintenance algorithms. healthconnect secure healthcare management app for teleconsultation and record tracking. certifications aws certified solutions architect associate google professional cloud developer references available upon request.
+==================================================
+
+=== Application ID: 2 ===
+Original (777 chars):
+Maria Elenor Cruz
+Front-End Web Developer
+Professional Summary
+Detail-oriented front-end web developer with a passion for creating responsive and user-friendly interfaces
+Skilled in React, CSS, and modern JavaScript frameworks.
+Education
+Bachelor of Science in Computer Science, De La Salle University
+Skills
+HTML, CSS, JavaScript, React, Git, Responsive Design, Figma
+Experience
+- Developed and maintained UI components for company web applications.
+- Collaborated with backend developers to integrate RESTful APIs.
+- Ensured accessibility and cross-browser compatibility across platforms.
+Projects
+- Portfolio Website – Designed and deployed a personal website showcasing web development projects.
+- E-Commerce UI – Built a prototype for an online retail platform with React.
+
+Processed (763 chars):
+maria elenor cruz front-end web developer professional summary detail-oriented front-end web developer with a passion for creating responsive and user-friendly interfaces skilled in react, css, and modern JavaScript frameworks. education bachelor of science in computer science, de la salle university skills html, css, JavaScript, react, git, responsive design, figma experience developed and maintained ui components for company web applications. collaborated with backend developers to integrate RESTful apis. ensured accessibility and cross-browser compatibility across platforms. projects portfolio website designed and deployed a personal website showcasing web development projects. e-commerce ui built a prototype for an online retail platform with react.
+==================================================
+
+=== Application ID: 3 ===
+Original (777 chars):
+Maria Elenor Cruz
+Front-End Web Developer
+Professional Summary
+Detail-oriented front-end web developer with a passion for creating responsive and user-friendly interfaces
+Skilled in React, CSS, and modern JavaScript frameworks.
+Education
+Bachelor of Science in Computer Science, De La Salle University
+Skills
+HTML, CSS, JavaScript, React, Git, Responsive Design, Figma
+Experience
+- Developed and maintained UI components for company web applications.
+- Collaborated with backend developers to integrate RESTful APIs.
+- Ensured accessibility and cross-browser compatibility across platforms.
+Projects
+- Portfolio Website – Designed and deployed a personal website showcasing web development projects.
+- E-Commerce UI – Built a prototype for an online retail platform with React.
+
+Processed (763 chars):
+maria elenor cruz front-end web developer professional summary detail-oriented front-end web developer with a passion for creating responsive and user-friendly interfaces skilled in react, css, and modern JavaScript frameworks. education bachelor of science in computer science, de la salle university skills html, css, JavaScript, react, git, responsive design, figma experience developed and maintained ui components for company web applications. collaborated with backend developers to integrate RESTful apis. ensured accessibility and cross-browser compatibility across platforms. projects portfolio website designed and deployed a personal website showcasing web development projects. e-commerce ui built a prototype for an online retail platform with react.
+==================================================
+
+=== Application ID: 4 ===
+Original (777 chars):
+Maria Elenor Cruz
+Front-End Web Developer
+Professional Summary
+Detail-oriented front-end web developer with a passion for creating responsive and user-friendly interfaces
+Skilled in React, CSS, and modern JavaScript frameworks.
+Education
+Bachelor of Science in Computer Science, De La Salle University
+Skills
+HTML, CSS, JavaScript, React, Git, Responsive Design, Figma
+Experience
+- Developed and maintained UI components for company web applications.
+- Collaborated with backend developers to integrate RESTful APIs.
+- Ensured accessibility and cross-browser compatibility across platforms.
+Projects
+- Portfolio Website – Designed and deployed a personal website showcasing web development projects.
+- E-Commerce UI – Built a prototype for an online retail platform with React.
+
+Processed (763 chars):
+maria elenor cruz front-end web developer professional summary detail-oriented front-end web developer with a passion for creating responsive and user-friendly interfaces skilled in react, css, and modern JavaScript frameworks. education bachelor of science in computer science, de la salle university skills html, css, JavaScript, react, git, responsive design, figma experience developed and maintained ui components for company web applications. collaborated with backend developers to integrate RESTful apis. ensured accessibility and cross-browser compatibility across platforms. projects portfolio website designed and deployed a personal website showcasing web development projects. e-commerce ui built a prototype for an online retail platform with react.
+==================================================
+
+=== Application ID: 5 ===
+Original (777 chars):
+Maria Elenor Cruz
+Front-End Web Developer
+Professional Summary
+Detail-oriented front-end web developer with a passion for creating responsive and user-friendly interfaces
+Skilled in React, CSS, and modern JavaScript frameworks.
+Education
+Bachelor of Science in Computer Science, De La Salle University
+Skills
+HTML, CSS, JavaScript, React, Git, Responsive Design, Figma
+Experience
+- Developed and maintained UI components for company web applications.
+- Collaborated with backend developers to integrate RESTful APIs.
+- Ensured accessibility and cross-browser compatibility across platforms.
+Projects
+- Portfolio Website – Designed and deployed a personal website showcasing web development projects.
+- E-Commerce UI – Built a prototype for an online retail platform with React.
+
+Processed (763 chars):
+maria elenor cruz front-end web developer professional summary detail-oriented front-end web developer with a passion for creating responsive and user-friendly interfaces skilled in react, css, and modern JavaScript frameworks. education bachelor of science in computer science, de la salle university skills html, css, JavaScript, react, git, responsive design, figma experience developed and maintained ui components for company web applications. collaborated with backend developers to integrate RESTful apis. ensured accessibility and cross-browser compatibility across platforms. projects portfolio website designed and deployed a personal website showcasing web development projects. e-commerce ui built a prototype for an online retail platform with react.
+==================================================
+
+=== Application ID: 6 ===
+Original (777 chars):
+Maria Elenor Cruz
+Front-End Web Developer
+Professional Summary
+Detail-oriented front-end web developer with a passion for creating responsive and user-friendly interfaces
+Skilled in React, CSS, and modern JavaScript frameworks.
+Education
+Bachelor of Science in Computer Science, De La Salle University
+Skills
+HTML, CSS, JavaScript, React, Git, Responsive Design, Figma
+Experience
+- Developed and maintained UI components for company web applications.
+- Collaborated with backend developers to integrate RESTful APIs.
+- Ensured accessibility and cross-browser compatibility across platforms.
+Projects
+- Portfolio Website – Designed and deployed a personal website showcasing web development projects.
+- E-Commerce UI – Built a prototype for an online retail platform with React.
+
+Processed (763 chars):
+maria elenor cruz front-end web developer professional summary detail-oriented front-end web developer with a passion for creating responsive and user-friendly interfaces skilled in react, css, and modern JavaScript frameworks. education bachelor of science in computer science, de la salle university skills html, css, JavaScript, react, git, responsive design, figma experience developed and maintained ui components for company web applications. collaborated with backend developers to integrate RESTful apis. ensured accessibility and cross-browser compatibility across platforms. projects portfolio website designed and deployed a personal website showcasing web development projects. e-commerce ui built a prototype for an online retail platform with react.
+==================================================
+
+=== Application ID: 7 ===
+Original (777 chars):
+Maria Elenor Cruz
+Front-End Web Developer
+Professional Summary
+Detail-oriented front-end web developer with a passion for creating responsive and user-friendly interfaces
+Skilled in React, CSS, and modern JavaScript frameworks.
+Education
+Bachelor of Science in Computer Science, De La Salle University
+Skills
+HTML, CSS, JavaScript, React, Git, Responsive Design, Figma
+Experience
+- Developed and maintained UI components for company web applications.
+- Collaborated with backend developers to integrate RESTful APIs.
+- Ensured accessibility and cross-browser compatibility across platforms.
+Projects
+- Portfolio Website – Designed and deployed a personal website showcasing web development projects.
+- E-Commerce UI – Built a prototype for an online retail platform with React.
+
+Processed (763 chars):
+maria elenor cruz front-end web developer professional summary detail-oriented front-end web developer with a passion for creating responsive and user-friendly interfaces skilled in react, css, and modern JavaScript frameworks. education bachelor of science in computer science, de la salle university skills html, css, JavaScript, react, git, responsive design, figma experience developed and maintained ui components for company web applications. collaborated with backend developers to integrate RESTful apis. ensured accessibility and cross-browser compatibility across platforms. projects portfolio website designed and deployed a personal website showcasing web development projects. e-commerce ui built a prototype for an online retail platform with react.
+==================================================
+
+=== Application ID: 8 ===
+Original (750 chars):
+Angela Torres
+Data Analyst
+Professional Summary
+Analytical and detail-focused data analyst with experience transforming raw data into actionable insights to support business decision-making.
+Education
+Bachelor of Science in Information Systems, Ateneo de Manila University
+Skills
+SQL, Python, Excel, Power BI, Tableau, Data Visualization, Statistics
+Experience
+- Cleaned and analyzed large datasets for internal performance reporting.
+- Created visual dashboards in Power BI for management use.
+- Supported predictive modeling by preparing data pipelines.
+Projects
+- Sales Forecasting Model – Built a Python-based regression model to predict revenue trends.
+- Customer Insights Dashboard – Designed a Tableau dashboard for customer behavior tracking.
+
+Processed (736 chars):
+angela torres data analyst professional summary analytical and detail-focused data analyst with experience transforming raw data into actionable insights to support business decision-making. education bachelor of science in information systems, ateneo de manila university skills sql, python, excel, power bi, tableau, data visualization, statistics experience cleaned and analyzed large datasets for internal performance reporting. created visual dashboards in power bi for management use. supported predictive modeling by preparing data pipelines. projects sales forecasting model built a python-based regression model to predict revenue trends. customer insights dashboard designed a tableau dashboard for customer behavior tracking.
+==================================================
+
+=== Application ID: 9 ===
+Original (750 chars):
+Angela Torres
+Data Analyst
+Professional Summary
+Analytical and detail-focused data analyst with experience transforming raw data into actionable insights to support business decision-making.
+Education
+Bachelor of Science in Information Systems, Ateneo de Manila University
+Skills
+SQL, Python, Excel, Power BI, Tableau, Data Visualization, Statistics
+Experience
+- Cleaned and analyzed large datasets for internal performance reporting.
+- Created visual dashboards in Power BI for management use.
+- Supported predictive modeling by preparing data pipelines.
+Projects
+- Sales Forecasting Model – Built a Python-based regression model to predict revenue trends.
+- Customer Insights Dashboard – Designed a Tableau dashboard for customer behavior tracking.
+
+Processed (736 chars):
+angela torres data analyst professional summary analytical and detail-focused data analyst with experience transforming raw data into actionable insights to support business decision-making. education bachelor of science in information systems, ateneo de manila university skills sql, python, excel, power bi, tableau, data visualization, statistics experience cleaned and analyzed large datasets for internal performance reporting. created visual dashboards in power bi for management use. supported predictive modeling by preparing data pipelines. projects sales forecasting model built a python-based regression model to predict revenue trends. customer insights dashboard designed a tableau dashboard for customer behavior tracking.
+==================================================
+
+=== Application ID: 10 ===
+Original (750 chars):
+Angela Torres
+Data Analyst
+Professional Summary
+Analytical and detail-focused data analyst with experience transforming raw data into actionable insights to support business decision-making.
+Education
+Bachelor of Science in Information Systems, Ateneo de Manila University
+Skills
+SQL, Python, Excel, Power BI, Tableau, Data Visualization, Statistics
+Experience
+- Cleaned and analyzed large datasets for internal performance reporting.
+- Created visual dashboards in Power BI for management use.
+- Supported predictive modeling by preparing data pipelines.
+Projects
+- Sales Forecasting Model – Built a Python-based regression model to predict revenue trends.
+- Customer Insights Dashboard – Designed a Tableau dashboard for customer behavior tracking.
+
+Processed (736 chars):
+angela torres data analyst professional summary analytical and detail-focused data analyst with experience transforming raw data into actionable insights to support business decision-making. education bachelor of science in information systems, ateneo de manila university skills sql, python, excel, power bi, tableau, data visualization, statistics experience cleaned and analyzed large datasets for internal performance reporting. created visual dashboards in power bi for management use. supported predictive modeling by preparing data pipelines. projects sales forecasting model built a python-based regression model to predict revenue trends. customer insights dashboard designed a tableau dashboard for customer behavior tracking.
+==================================================
+
+=== Application ID: 11 ===
+Original (750 chars):
+Angela Torres
+Data Analyst
+Professional Summary
+Analytical and detail-focused data analyst with experience transforming raw data into actionable insights to support business decision-making.
+Education
+Bachelor of Science in Information Systems, Ateneo de Manila University
+Skills
+SQL, Python, Excel, Power BI, Tableau, Data Visualization, Statistics
+Experience
+- Cleaned and analyzed large datasets for internal performance reporting.
+- Created visual dashboards in Power BI for management use.
+- Supported predictive modeling by preparing data pipelines.
+Projects
+- Sales Forecasting Model – Built a Python-based regression model to predict revenue trends.
+- Customer Insights Dashboard – Designed a Tableau dashboard for customer behavior tracking.
+
+Processed (736 chars):
+angela torres data analyst professional summary analytical and detail-focused data analyst with experience transforming raw data into actionable insights to support business decision-making. education bachelor of science in information systems, ateneo de manila university skills sql, python, excel, power bi, tableau, data visualization, statistics experience cleaned and analyzed large datasets for internal performance reporting. created visual dashboards in power bi for management use. supported predictive modeling by preparing data pipelines. projects sales forecasting model built a python-based regression model to predict revenue trends. customer insights dashboard designed a tableau dashboard for customer behavior tracking.
+==================================================
+
+=== Application ID: 12 ===
+Original (750 chars):
+Angela Torres
+Data Analyst
+Professional Summary
+Analytical and detail-focused data analyst with experience transforming raw data into actionable insights to support business decision-making.
+Education
+Bachelor of Science in Information Systems, Ateneo de Manila University
+Skills
+SQL, Python, Excel, Power BI, Tableau, Data Visualization, Statistics
+Experience
+- Cleaned and analyzed large datasets for internal performance reporting.
+- Created visual dashboards in Power BI for management use.
+- Supported predictive modeling by preparing data pipelines.
+Projects
+- Sales Forecasting Model – Built a Python-based regression model to predict revenue trends.
+- Customer Insights Dashboard – Designed a Tableau dashboard for customer behavior tracking.
+
+Processed (736 chars):
+angela torres data analyst professional summary analytical and detail-focused data analyst with experience transforming raw data into actionable insights to support business decision-making. education bachelor of science in information systems, ateneo de manila university skills sql, python, excel, power bi, tableau, data visualization, statistics experience cleaned and analyzed large datasets for internal performance reporting. created visual dashboards in power bi for management use. supported predictive modeling by preparing data pipelines. projects sales forecasting model built a python-based regression model to predict revenue trends. customer insights dashboard designed a tableau dashboard for customer behavior tracking.
+==================================================
+
+=== Application ID: 13 ===
+Original (766 chars):
+Carla Dizon
+Machine Learning Engineer
+Professional Summary
+Enthusiastic ML engineer experienced in building and deploying data-driven models using Python and cloud-based tools.
+Education
+Master of Science in Computer Science, University of the Philippines Diliman
+Skills
+Python, TensorFlow, Scikit-learn, Pandas, AWS, Data Preprocessing, Model Deployment
+Experience
+- Preprocessed datasets for natural language processing projects.
+- Built classification and clustering models to optimize business insights.
+- Collaborated with developers to deploy ML models using Flask APIs.
+Projects
+- Text Classification API – Developed a REST API for sentiment analysis using TensorFlow.
+- Recommendation System – Implemented a product recommender using collaborative filtering.
+
+Processed (752 chars):
+carla dizon machine learning engineer professional summary enthusiastic ml engineer experienced in building and deploying data-driven models using python and cloud-based tools. education master of science in computer science, university of the philippines diliman skills python, tensorflow, scikit-learn, pandas, aws, data preprocessing, model deployment experience preprocessed datasets for natural language processing projects. built classification and clustering models to optimize business insights. collaborated with developers to deploy ml models using flask apis. projects text classification api developed a rest api for sentiment analysis using tensorflow. recommendation system implemented a product recommender using collaborative filtering.
+==================================================
+
+=== Application ID: 14 ===
+Original (766 chars):
+Carla Dizon
+Machine Learning Engineer
+Professional Summary
+Enthusiastic ML engineer experienced in building and deploying data-driven models using Python and cloud-based tools.
+Education
+Master of Science in Computer Science, University of the Philippines Diliman
+Skills
+Python, TensorFlow, Scikit-learn, Pandas, AWS, Data Preprocessing, Model Deployment
+Experience
+- Preprocessed datasets for natural language processing projects.
+- Built classification and clustering models to optimize business insights.
+- Collaborated with developers to deploy ML models using Flask APIs.
+Projects
+- Text Classification API – Developed a REST API for sentiment analysis using TensorFlow.
+- Recommendation System – Implemented a product recommender using collaborative filtering.
+
+Processed (752 chars):
+carla dizon machine learning engineer professional summary enthusiastic ml engineer experienced in building and deploying data-driven models using python and cloud-based tools. education master of science in computer science, university of the philippines diliman skills python, tensorflow, scikit-learn, pandas, aws, data preprocessing, model deployment experience preprocessed datasets for natural language processing projects. built classification and clustering models to optimize business insights. collaborated with developers to deploy ml models using flask apis. projects text classification api developed a rest api for sentiment analysis using tensorflow. recommendation system implemented a product recommender using collaborative filtering.
+==================================================
+
+=== Application ID: 15 ===
+Original (766 chars):
+Carla Dizon
+Machine Learning Engineer
+Professional Summary
+Enthusiastic ML engineer experienced in building and deploying data-driven models using Python and cloud-based tools.
+Education
+Master of Science in Computer Science, University of the Philippines Diliman
+Skills
+Python, TensorFlow, Scikit-learn, Pandas, AWS, Data Preprocessing, Model Deployment
+Experience
+- Preprocessed datasets for natural language processing projects.
+- Built classification and clustering models to optimize business insights.
+- Collaborated with developers to deploy ML models using Flask APIs.
+Projects
+- Text Classification API – Developed a REST API for sentiment analysis using TensorFlow.
+- Recommendation System – Implemented a product recommender using collaborative filtering.
+
+Processed (752 chars):
+carla dizon machine learning engineer professional summary enthusiastic ml engineer experienced in building and deploying data-driven models using python and cloud-based tools. education master of science in computer science, university of the philippines diliman skills python, tensorflow, scikit-learn, pandas, aws, data preprocessing, model deployment experience preprocessed datasets for natural language processing projects. built classification and clustering models to optimize business insights. collaborated with developers to deploy ml models using flask apis. projects text classification api developed a rest api for sentiment analysis using tensorflow. recommendation system implemented a product recommender using collaborative filtering.
+==================================================
+
+=== Application ID: 16 ===
+Original (766 chars):
+Carla Dizon
+Machine Learning Engineer
+Professional Summary
+Enthusiastic ML engineer experienced in building and deploying data-driven models using Python and cloud-based tools.
+Education
+Master of Science in Computer Science, University of the Philippines Diliman
+Skills
+Python, TensorFlow, Scikit-learn, Pandas, AWS, Data Preprocessing, Model Deployment
+Experience
+- Preprocessed datasets for natural language processing projects.
+- Built classification and clustering models to optimize business insights.
+- Collaborated with developers to deploy ML models using Flask APIs.
+Projects
+- Text Classification API – Developed a REST API for sentiment analysis using TensorFlow.
+- Recommendation System – Implemented a product recommender using collaborative filtering.
+
+Processed (752 chars):
+carla dizon machine learning engineer professional summary enthusiastic ml engineer experienced in building and deploying data-driven models using python and cloud-based tools. education master of science in computer science, university of the philippines diliman skills python, tensorflow, scikit-learn, pandas, aws, data preprocessing, model deployment experience preprocessed datasets for natural language processing projects. built classification and clustering models to optimize business insights. collaborated with developers to deploy ml models using flask apis. projects text classification api developed a rest api for sentiment analysis using tensorflow. recommendation system implemented a product recommender using collaborative filtering.
+==================================================
+
+=== Application ID: 17 ===
+Original (766 chars):
+Carla Dizon
+Machine Learning Engineer
+Professional Summary
+Enthusiastic ML engineer experienced in building and deploying data-driven models using Python and cloud-based tools.
+Education
+Master of Science in Computer Science, University of the Philippines Diliman
+Skills
+Python, TensorFlow, Scikit-learn, Pandas, AWS, Data Preprocessing, Model Deployment
+Experience
+- Preprocessed datasets for natural language processing projects.
+- Built classification and clustering models to optimize business insights.
+- Collaborated with developers to deploy ML models using Flask APIs.
+Projects
+- Text Classification API – Developed a REST API for sentiment analysis using TensorFlow.
+- Recommendation System – Implemented a product recommender using collaborative filtering.
+
+Processed (752 chars):
+carla dizon machine learning engineer professional summary enthusiastic ml engineer experienced in building and deploying data-driven models using python and cloud-based tools. education master of science in computer science, university of the philippines diliman skills python, tensorflow, scikit-learn, pandas, aws, data preprocessing, model deployment experience preprocessed datasets for natural language processing projects. built classification and clustering models to optimize business insights. collaborated with developers to deploy ml models using flask apis. projects text classification api developed a rest api for sentiment analysis using tensorflow. recommendation system implemented a product recommender using collaborative filtering.
+==================================================
+
+=== Application ID: 18 ===
+Original (766 chars):
+Carla Dizon
+Machine Learning Engineer
+Professional Summary
+Enthusiastic ML engineer experienced in building and deploying data-driven models using Python and cloud-based tools.
+Education
+Master of Science in Computer Science, University of the Philippines Diliman
+Skills
+Python, TensorFlow, Scikit-learn, Pandas, AWS, Data Preprocessing, Model Deployment
+Experience
+- Preprocessed datasets for natural language processing projects.
+- Built classification and clustering models to optimize business insights.
+- Collaborated with developers to deploy ML models using Flask APIs.
+Projects
+- Text Classification API – Developed a REST API for sentiment analysis using TensorFlow.
+- Recommendation System – Implemented a product recommender using collaborative filtering.
+
+Processed (752 chars):
+carla dizon machine learning engineer professional summary enthusiastic ml engineer experienced in building and deploying data-driven models using python and cloud-based tools. education master of science in computer science, university of the philippines diliman skills python, tensorflow, scikit-learn, pandas, aws, data preprocessing, model deployment experience preprocessed datasets for natural language processing projects. built classification and clustering models to optimize business insights. collaborated with developers to deploy ml models using flask apis. projects text classification api developed a rest api for sentiment analysis using tensorflow. recommendation system implemented a product recommender using collaborative filtering.
+==================================================
+
+=== Application ID: 19 ===
+Original (743 chars):
+Rafael Santiago
+Cybersecurity Analyst
+Professional Summary
+Security-focused professional skilled in identifying vulnerabilities, monitoring threats, and assisting in incident response operations.
+Education
+Bachelor of Science in Computer Engineering, Mapúa University
+Skills
+Network Security, SIEM, Firewalls, Linux, Incident Response, Security Auditing
+Experience
+- Monitored security logs and identified suspicious activity across systems.
+- Assisted in vulnerability assessments and patch management.
+- Helped develop internal cybersecurity awareness materials.
+Projects
+- Threat Detection Script – Wrote a Python script to monitor unauthorized access logs.
+- Security Audit Report – Participated in the company’s annual IT security review.
+
+Processed (729 chars):
+rafael santiago cybersecurity analyst professional summary security-focused professional skilled in identifying vulnerabilities, monitoring threats, and assisting in incident response operations. education bachelor of science in computer engineering, mapúa university skills network security, siem, firewalls, linux, incident response, security auditing experience monitored security logs and identified suspicious activity across systems. assisted in vulnerability assessments and patch management. helped develop internal cybersecurity awareness materials. projects threat detection script wrote a python script to monitor unauthorized access logs. security audit report participated in the company's annual it security review.
+==================================================
+
+=== Application ID: 20 ===
+Original (743 chars):
+Rafael Santiago
+Cybersecurity Analyst
+Professional Summary
+Security-focused professional skilled in identifying vulnerabilities, monitoring threats, and assisting in incident response operations.
+Education
+Bachelor of Science in Computer Engineering, Mapúa University
+Skills
+Network Security, SIEM, Firewalls, Linux, Incident Response, Security Auditing
+Experience
+- Monitored security logs and identified suspicious activity across systems.
+- Assisted in vulnerability assessments and patch management.
+- Helped develop internal cybersecurity awareness materials.
+Projects
+- Threat Detection Script – Wrote a Python script to monitor unauthorized access logs.
+- Security Audit Report – Participated in the company’s annual IT security review.
+
+Processed (729 chars):
+rafael santiago cybersecurity analyst professional summary security-focused professional skilled in identifying vulnerabilities, monitoring threats, and assisting in incident response operations. education bachelor of science in computer engineering, mapúa university skills network security, siem, firewalls, linux, incident response, security auditing experience monitored security logs and identified suspicious activity across systems. assisted in vulnerability assessments and patch management. helped develop internal cybersecurity awareness materials. projects threat detection script wrote a python script to monitor unauthorized access logs. security audit report participated in the company's annual it security review.
+==================================================
+
+=== Application ID: 21 ===
+Original (743 chars):
+Rafael Santiago
+Cybersecurity Analyst
+Professional Summary
+Security-focused professional skilled in identifying vulnerabilities, monitoring threats, and assisting in incident response operations.
+Education
+Bachelor of Science in Computer Engineering, Mapúa University
+Skills
+Network Security, SIEM, Firewalls, Linux, Incident Response, Security Auditing
+Experience
+- Monitored security logs and identified suspicious activity across systems.
+- Assisted in vulnerability assessments and patch management.
+- Helped develop internal cybersecurity awareness materials.
+Projects
+- Threat Detection Script – Wrote a Python script to monitor unauthorized access logs.
+- Security Audit Report – Participated in the company’s annual IT security review.
+
+Processed (729 chars):
+rafael santiago cybersecurity analyst professional summary security-focused professional skilled in identifying vulnerabilities, monitoring threats, and assisting in incident response operations. education bachelor of science in computer engineering, mapúa university skills network security, siem, firewalls, linux, incident response, security auditing experience monitored security logs and identified suspicious activity across systems. assisted in vulnerability assessments and patch management. helped develop internal cybersecurity awareness materials. projects threat detection script wrote a python script to monitor unauthorized access logs. security audit report participated in the company's annual it security review.
+==================================================
+
+=== Application ID: 22 ===
+Original (743 chars):
+Rafael Santiago
+Cybersecurity Analyst
+Professional Summary
+Security-focused professional skilled in identifying vulnerabilities, monitoring threats, and assisting in incident response operations.
+Education
+Bachelor of Science in Computer Engineering, Mapúa University
+Skills
+Network Security, SIEM, Firewalls, Linux, Incident Response, Security Auditing
+Experience
+- Monitored security logs and identified suspicious activity across systems.
+- Assisted in vulnerability assessments and patch management.
+- Helped develop internal cybersecurity awareness materials.
+Projects
+- Threat Detection Script – Wrote a Python script to monitor unauthorized access logs.
+- Security Audit Report – Participated in the company’s annual IT security review.
+
+Processed (729 chars):
+rafael santiago cybersecurity analyst professional summary security-focused professional skilled in identifying vulnerabilities, monitoring threats, and assisting in incident response operations. education bachelor of science in computer engineering, mapúa university skills network security, siem, firewalls, linux, incident response, security auditing experience monitored security logs and identified suspicious activity across systems. assisted in vulnerability assessments and patch management. helped develop internal cybersecurity awareness materials. projects threat detection script wrote a python script to monitor unauthorized access logs. security audit report participated in the company's annual it security review.
+==================================================
+
+=== Application ID: 23 ===
+Original (743 chars):
+Rafael Santiago
+Cybersecurity Analyst
+Professional Summary
+Security-focused professional skilled in identifying vulnerabilities, monitoring threats, and assisting in incident response operations.
+Education
+Bachelor of Science in Computer Engineering, Mapúa University
+Skills
+Network Security, SIEM, Firewalls, Linux, Incident Response, Security Auditing
+Experience
+- Monitored security logs and identified suspicious activity across systems.
+- Assisted in vulnerability assessments and patch management.
+- Helped develop internal cybersecurity awareness materials.
+Projects
+- Threat Detection Script – Wrote a Python script to monitor unauthorized access logs.
+- Security Audit Report – Participated in the company’s annual IT security review.
+
+Processed (729 chars):
+rafael santiago cybersecurity analyst professional summary security-focused professional skilled in identifying vulnerabilities, monitoring threats, and assisting in incident response operations. education bachelor of science in computer engineering, mapúa university skills network security, siem, firewalls, linux, incident response, security auditing experience monitored security logs and identified suspicious activity across systems. assisted in vulnerability assessments and patch management. helped develop internal cybersecurity awareness materials. projects threat detection script wrote a python script to monitor unauthorized access logs. security audit report participated in the company's annual it security review.
+==================================================
+
+=== Application ID: 24 ===
+Original (743 chars):
+Rafael Santiago
+Cybersecurity Analyst
+Professional Summary
+Security-focused professional skilled in identifying vulnerabilities, monitoring threats, and assisting in incident response operations.
+Education
+Bachelor of Science in Computer Engineering, Mapúa University
+Skills
+Network Security, SIEM, Firewalls, Linux, Incident Response, Security Auditing
+Experience
+- Monitored security logs and identified suspicious activity across systems.
+- Assisted in vulnerability assessments and patch management.
+- Helped develop internal cybersecurity awareness materials.
+Projects
+- Threat Detection Script – Wrote a Python script to monitor unauthorized access logs.
+- Security Audit Report – Participated in the company’s annual IT security review.
+
+Processed (729 chars):
+rafael santiago cybersecurity analyst professional summary security-focused professional skilled in identifying vulnerabilities, monitoring threats, and assisting in incident response operations. education bachelor of science in computer engineering, mapúa university skills network security, siem, firewalls, linux, incident response, security auditing experience monitored security logs and identified suspicious activity across systems. assisted in vulnerability assessments and patch management. helped develop internal cybersecurity awareness materials. projects threat detection script wrote a python script to monitor unauthorized access logs. security audit report participated in the company's annual it security review.
+==================================================
+
+=== Application ID: 25 ===
+Original (791 chars):
+Angela Mae S. Torres
+Davao City, Philippines | +63 918 765 4321 | angela.torres@email.com
+Objective
+To obtain a position as an Administrative Aide III where I can apply my knowledge in
+computer systems and administrative procedures.
+Education
+Bachelor of Science in Information Technology University of Mindanao, 2023
+Experience
+Clerical Assistant Department of Education – Region XI June 2023 – June 2024  Assisted
+in documentation, recordkeeping, and filing of office documents.  Supported the
+preparation of travel and logistical requests.  Maintained confidentiality of student and
+personnel records.
+Skills
+ Clerical and Office Support  File Management  Computer Literacy  Time Management
+ Team Collaboration
+Eligibility
+Career Service Sub-professional (First Level Eligibility)
+
+Processed (748 chars):
+angela mae s. torres davao city, philippines +63 [phone] [email] objective to obtain a position as an administrative aide iii where i can apply my knowledge in computer systems and administrative procedures. education bachelor of science in information technology university of mindanao, 2023 experience clerical assistant department of education region xi june 2023 june 2024 assisted in documentation, recordkeeping, and filing of office documents. supported the preparation of travel and logistical requests. maintained confidentiality of student and personnel records. skills clerical and office support file management computer literacy time management team collaboration eligibility career service sub-professional ( first level eligibility )
+==================================================
+
+=== Application ID: 26 ===
+Original (817 chars):
+John Carlo T. Mendoza
+Cebu City, Philippines | +63 927 654 3210 | john.mendoza@email.com
+Objective
+To apply my organizational and IT skills in supporting office operations and documentation
+as an Administrative Aide III.
+Education
+Bachelor of Science in Computer Science University of San Carlos, 2022
+Experience
+Administrative Support Staff Local Government Unit – Cebu City May 2023 – April 2024 
+Processed requests, vouchers, and logistics documents.  Managed filing and safekeeping
+of confidential records.  Provided basic technical support and coordination for IT
+equipment inventory.
+Skills
+ Office and Document Management  Basic Financial Processing  Technical Support 
+Communication and Coordination  MS Excel and Database Handling
+Eligibility
+Career Service Sub-professional (First Level Eligibility)
+
+Processed (779 chars):
+john carlo t. mendoza cebu city, philippines +63 [phone] [email] objective to apply my organizational and it skills in supporting office operations and documentation as an administrative aide iii. education bachelor of science in computer science university of san carlos, 2022 experience administrative support staff local government unit cebu city may 2023 april 2024 processed requests, vouchers, and logistics documents. managed filing and safekeeping of confidential records. provided basic technical support and coordination for it equipment inventory. skills office and document management basic financial processing technical support communication and coordination master excel and database handling eligibility career service sub-professional ( first level eligibility )
+==================================================
+
+=== Application ID: 27 ===
+Original (885 chars):
+Maria Isabel D. Reyes
+Quezon City, Philippines | +63 912 345 6789 | maria.reyes@email.com
+Objective
+To contribute my administrative and technical skills in providing efficient office support as
+an Administrative Aide III.
+Education
+Bachelor of Science in Information Technology Polytechnic University of the Philippines,
+2023
+Experience
+Administrative Assistant Intern Department of Information and Communications
+Technology (DICT) June 2023 – May 2024  Assisted in preparing and processing
+vouchers and travel documents.  Organized and maintained digital office records and
+reports.  Supported IT-related administrative tasks such as data entry and system
+documentation.
+Skills
+ Office Administration  MS Office & Google Workspace  Record Management  Data
+Entry and Encoding  Communication and Coordination
+Eligibility
+Career Service Sub-professional (First Level Eligibility)
+
+Processed (850 chars):
+maria isabel d. reyes quezon city, philippines +63 [phone] [email] objective to contribute my administrative and technical skills in providing efficient office support as an administrative aide iii. education bachelor of science in information technology polytechnic university of the philippines, 2023 experience administrative assistant intern department of information and communications technology ( dict ) june 2023 may 2024 assisted in preparing and processing vouchers and travel documents. organized and maintained digital office records and reports. supported it-related administrative tasks such as data entry and system documentation. skills office administration master office google workspace record management data entry and encoding communication and coordination eligibility career service sub-professional ( first level eligibility )
+==================================================
+

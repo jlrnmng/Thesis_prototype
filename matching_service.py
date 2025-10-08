@@ -1,6 +1,19 @@
 """
 Matching service for ranking applicants against job descriptions
-Uses SentenceTransformer embeddings and hybrid scoring (70% cosine + 30% BM25)
+Uses SentenceTransformer embeddings and hybrid scoring.
+
+SCORING FORMULA (CONSISTENT ACROSS ALL MATCHING):
+Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
+
+Where:
+- Cosine Similarity: Semantic understanding using sentence embeddings (0-1 range)
+- BM25 Score: Keyword matching using BM25 algorithm (normalized to 0-1 range)
+- Final Score: 0-100 point scale
+
+This formula is used identically for:
+1. Candidate shortlisting (rank_applicants_for_job)
+2. User job matching (get_top_jobs_for_resume)
+3. Matchmaking explanations
 """
 import warnings
 import chromadb
@@ -139,7 +152,9 @@ class MatchingService:
     def rank_applicants_for_job(self, job_description: str, job_role: str, 
                                 applications: List) -> List[Tuple[int, float]]:
         """
-        Rank applicants using hybrid scoring (70% cosine + 30% BM25)
+        Rank applicants using the EXACT hybrid scoring formula.
+        Formula: Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
+        This ensures consistency with the shortlisting algorithm.
         """
         if not applications:
             return []
@@ -148,14 +163,15 @@ class MatchingService:
         resume_texts = [app.resume_text for app in applications]
         app_ids = [app.id for app in applications]
         
+        # Get cosine similarity scores (already 0-1 range)
         cosine_scores = self._get_cosine_similarity_scores(job_query, resume_texts)
-        bm25_scores = self._get_bm25_scores(job_query, resume_texts)
         
-        # Normalize BM25 scores to 0-1 range to prevent negative final scores
+        # Get BM25 scores and normalize them to 0-1 range
+        bm25_scores = self._get_bm25_scores(job_query, resume_texts)
         bm25_scores_normalized = self._normalize_scores(bm25_scores)
         
-        # Use the NEW scoring methodology: Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
-        # Cosine scores are already 0-1, BM25 scores are now normalized to 0-1
+        # Apply the EXACT same formula as shortlisting:
+        # Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
         final_scores = [
             (cos * 70) + (bm25_norm * 30)
             for cos, bm25_norm in zip(cosine_scores, bm25_scores_normalized)
@@ -166,11 +182,33 @@ class MatchingService:
         
         return rankings
     
-    def _get_cosine_similarity_scores(self, query: str, documents: List[str]) -> List[float]:
-        """Get cosine similarity scores"""
+    def _preprocess_for_matching(self, text: str) -> str:
+        """
+        Preprocess text for optimal matching performance.
+        Applies NLP preprocessing if available, falls back to basic cleaning.
+        """
+        if not text:
+            return ""
+        
         try:
-            query_embedding = self.model.encode([query])
-            doc_embeddings = self.model.encode(documents)
+            from app.utils.text_preprocessing import preprocess_resume_text
+            return preprocess_resume_text(text, for_matching=True)
+        except ImportError:
+            # Fallback to basic preprocessing if module not available
+            return text.lower().strip()
+        except Exception as e:
+            print(f"Warning: Error in text preprocessing: {e}")
+            return text.lower().strip()
+    
+    def _get_cosine_similarity_scores(self, query: str, documents: List[str]) -> List[float]:
+        """Get cosine similarity scores with preprocessing"""
+        try:
+            # Preprocess query and documents for better matching
+            processed_query = self._preprocess_for_matching(query)
+            processed_docs = [self._preprocess_for_matching(doc) for doc in documents]
+            
+            query_embedding = self.model.encode([processed_query])
+            doc_embeddings = self.model.encode(processed_docs)
             similarities = cosine_similarity(query_embedding, doc_embeddings)[0]
             return similarities.tolist()
         except Exception as e:
@@ -178,10 +216,16 @@ class MatchingService:
             return [0.5] * len(documents)
     
     def _get_bm25_scores(self, query: str, documents: List[str]) -> List[float]:
-        """Get BM25 scores"""
+        """Get BM25 scores with preprocessing"""
         try:
-            tokenized_corpus = [doc.lower().split() for doc in documents]
-            tokenized_query = query.lower().split()
+            # Preprocess query and documents for better tokenization
+            processed_query = self._preprocess_for_matching(query)
+            processed_docs = [self._preprocess_for_matching(doc) for doc in documents]
+            
+            # Tokenize preprocessed text
+            tokenized_corpus = [doc.split() for doc in processed_docs]
+            tokenized_query = processed_query.split()
+            
             bm25 = BM25Okapi(tokenized_corpus)
             scores = bm25.get_scores(tokenized_query)
             return scores.tolist()
@@ -201,22 +245,28 @@ class MatchingService:
     
     def get_top_jobs_for_resume(self, resume_text: str, all_jobs: List, 
                                 top_n: int = 3) -> List[Tuple[int, float]]:
-        """Get top job matches for resume"""
+        """
+        Get top job matches for resume using the EXACT same formula as candidate shortlisting.
+        Formula: Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
+        """
         if not all_jobs:
             return []
         
         job_texts = [f"{job.role} {job.description}" for job in all_jobs]
         job_ids = [job.id for job in all_jobs]
         
+        # Get cosine similarity scores (already 0-1 range)
         cosine_scores = self._get_cosine_similarity_scores(resume_text, job_texts)
+        
+        # Get BM25 scores and normalize them to 0-1 range (same as shortlisting)
         bm25_scores = self._get_bm25_scores(resume_text, job_texts)
+        bm25_scores_normalized = self._normalize_scores(bm25_scores)
         
-        cosine_scores_norm = self._normalize_scores(cosine_scores)
-        bm25_scores_norm = self._normalize_scores(bm25_scores)
-        
+        # Apply the EXACT same formula as shortlisting:
+        # Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
         final_scores = [
-            (0.7 * cos + 0.3 * bm25) * 100
-            for cos, bm25 in zip(cosine_scores_norm, bm25_scores_norm)
+            (cos * 70) + (bm25_norm * 30)
+            for cos, bm25_norm in zip(cosine_scores, bm25_scores_normalized)
         ]
         
         rankings = list(zip(job_ids, final_scores))
