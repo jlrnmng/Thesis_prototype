@@ -322,47 +322,7 @@
     <div class="content-wrapper">
       <!-- Jobs List -->
       <div class="jobs-list">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
-          <h2 style="margin: 0;">Recommended Jobs for You</h2>
-          
-          <!-- Recommendation Style Selector -->
-          <div class="recommendation-style-selector">
-            <label for="clusterMode" style="font-size: 12px; color: #666; margin-right: 8px;">Style:</label>
-            <select id="clusterMode" onchange="updateRecommendations()" title="Choose your recommendation preference" style="
-              padding: 6px 10px; 
-              border: 1px solid #ddd; 
-              border-radius: 4px; 
-              font-size: 12px; 
-              background: white;
-              cursor: pointer;
-            ">
-              <option value="balanced" title="Best of both worlds - familiar roles + exploration">🎯 Balanced</option>
-              <option value="strict" title="Only jobs in your experienced domains">🔍 Focused</option>
-              <option value="off" title="All available positions across all fields">🌟 Explore All</option>
-            </select>
-            <span style="
-              display: inline-block; 
-              margin-left: 6px; 
-              width: 16px; 
-              height: 16px; 
-              background: #2eccb0; 
-              color: white; 
-              text-align: center; 
-              border-radius: 50%; 
-              font-size: 10px; 
-              line-height: 16px; 
-              cursor: help;
-              user-select: none;
-            " title="Balanced: Prioritizes familiar career areas with some exploration
-Focused: Only shows jobs in domains you've applied to before  
-Explore All: Shows all available positions for maximum discovery">?</span>
-          </div>
-        </div>
-        
-        <!-- Loading state for recommendations -->
-        <div id="jobsLoading" style="display: none; text-align: center; padding: 20px; color: #666;">
-          <span style="font-size: 18px;">🔄</span> Updating recommendations...
-        </div>
+        <h2>Recommended Jobs for You</h2>
         
         <!-- Jobs container -->
         <div id="jobsContainer">
@@ -415,127 +375,42 @@ Explore All: Shows all available positions for maximum discovery">?</span>
   </footer>
 
   <script>
-    // Function to update job recommendations based on cluster mode
-    function updateRecommendations() {
-      const clusterMode = document.getElementById('clusterMode').value;
-      const jobsContainer = document.getElementById('jobsContainer');
-      const jobsLoading = document.getElementById('jobsLoading');
-      
-      // Show loading state
-      jobsLoading.style.display = 'block';
-      jobsContainer.style.display = 'none';
-      
-      // Clear job details
-      const jobDetails = document.getElementById('jobDetails');
-      jobDetails.innerHTML = `
-        <h2 style="display: flex; align-items: center; gap: 10px; color: #2c3e50;">
-          <span style="font-size: 24px;">🎯</span>
-          Welcome {{ user.first_name }}!
-        </h2>
-        <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; text-align: center;">
-          <h3 style="color: #2c3e50; margin-bottom: 12px;">Your Personalized Job Recommendations</h3>
-          <p style="color: #666; margin-bottom: 15px; line-height: 1.5;">
-            Our AI has analyzed your profile and found the best matching opportunities. 
-            Click on any job from the list to see detailed information and your compatibility score.
-          </p>
-          <div style="background: #e8f5e8; padding: 15px; border-radius: 6px; margin-top: 15px;">
-            <p style="margin: 0; color: #2c3e50; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-              <span style="font-size: 16px;">💡</span>
-              <strong>Tip:</strong> Higher match scores indicate better alignment with your skills and experience
-            </p>
-          </div>
-        </div>
-      `;
-      
-      // Fetch updated recommendations with cluster mode
-      fetch(`/api/job_matches?cluster_mode=${clusterMode}`)
+    // Function to load initial job recommendations
+    function loadInitialRecommendations() {
+      fetch('/api/job_matches')
         .then(response => response.json())
         .then(data => {
-          jobsLoading.style.display = 'none';
-          jobsContainer.style.display = 'block';
-          
-          if (data.success && data.matches) {
-            // Clear existing jobs
-            jobsContainer.innerHTML = '';
-            
-            // Add cluster mode info
-            if (data.cluster_mode && data.user_cluster_history) {
-              const modeInfo = getModeDescription(data.cluster_mode, data.total_clusters_explored);
-              jobsContainer.innerHTML += `
-                <div style="background: #e3f2fd; border-radius: 6px; padding: 12px; margin-bottom: 15px; font-size: 13px;">
-                  <strong>📊 ${modeInfo.title}:</strong> ${modeInfo.description}
-                  ${data.total_clusters_explored > 0 ? `<br><small style="color: #666;">You've explored ${data.total_clusters_explored} career area(s)</small>` : ''}
-                </div>
-              `;
-            }
-            
-            // Render job cards
-            data.matches.forEach(job => {
-              const jobCard = document.createElement('div');
-              jobCard.className = 'job-card';
-              jobCard.setAttribute('data-id', job.job_id);
-              jobCard.setAttribute('data-title', job.role);
-              jobCard.setAttribute('data-description', job.description_preview);
-              jobCard.setAttribute('data-match', job.match_score);
-              jobCard.onclick = () => showJobDetails(job.job_id, job.role, job.description_preview, job.match_score);
-              
-              const clusterBadge = job.is_familiar_cluster ? 
-                '<span style="background: #4caf50; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 6px;">Familiar</span>' :
-                '<span style="background: #ff9800; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 6px;">New</span>';
-              
-              jobCard.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                  <h3 style="margin: 0;">${job.role}</h3>
-                  <div>
-                    <span class="match-badge">${Math.round(job.match_score)} Score</span>
-                    ${clusterBadge}
-                  </div>
-                </div>
-                <p>${job.description_preview}...</p>
-              `;
-              
-              jobsContainer.appendChild(jobCard);
-            });
-            
-            // Auto-select first job if available
-            const firstJob = jobsContainer.querySelector('.job-card');
-            if (firstJob) {
-              firstJob.click();
-            }
-          } else {
-            jobsContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No job recommendations available.</p>';
-          }
+          // Update the job display immediately
+          updateJobDisplay(data.matches);
         })
         .catch(error => {
           console.error('Error fetching recommendations:', error);
-          jobsLoading.style.display = 'none';
-          jobsContainer.style.display = 'block';
-          jobsContainer.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px;">Error loading recommendations. Please refresh the page.</p>';
         });
     }
-    
-    function getModeDescription(mode, clustersExplored) {
-      switch(mode) {
-        case 'strict':
-          return {
-            title: 'Focused Mode',
-            description: 'Showing jobs only in your familiar career areas for targeted opportunities.'
-          };
-        case 'balanced':
-          return {
-            title: 'Balanced Mode',
-            description: 'Prioritizing familiar areas while including growth opportunities in new fields.'
-          };
-        case 'off':
-          return {
-            title: 'Explore All Mode',
-            description: 'Showing all available positions to maximize your career exploration options.'
-          };
-        default:
-          return {
-            title: 'Smart Recommendations',
-            description: 'AI-powered job matching based on your profile and preferences.'
-          };
+    // Simple helper function for job display
+    function updateJobDisplay(matches) {
+      const jobsContainer = document.getElementById('jobsContainer');
+      if (matches && matches.length > 0) {
+        jobsContainer.innerHTML = '';
+        matches.forEach(job => {
+          const jobCard = document.createElement('div');
+          jobCard.className = 'job-card';
+          jobCard.setAttribute('data-id', job.job_id);
+          jobCard.setAttribute('data-title', job.role);
+          jobCard.setAttribute('data-description', job.description_preview);
+          jobCard.setAttribute('data-match', job.match_score);
+          jobCard.onclick = () => showJobDetails(job.job_id, job.role, job.description_preview, job.match_score);
+          
+          jobCard.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <h3 style="margin: 0;">${job.role}</h3>
+              <span class="match-badge">${job.match_score.toFixed(1)} Score</span>
+            </div>
+            <p>${job.description_preview}...</p>
+          `;
+          
+          jobsContainer.appendChild(jobCard);
+        });
       }
     }
 
@@ -621,7 +496,7 @@ Explore All: Shows all available positions for maximum discovery">?</span>
           <div class="match-score-display" style="background: linear-gradient(135deg, #2eccb0 0%, #27b89f 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(46, 204, 176, 0.2);">
             <div style="font-size: 36px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 10px;">
               <span style="font-size: 24px;">🎯</span>
-              ${Math.round(matchScore)} Score
+              ${matchScore.toFixed(1)} Score
             </div>
             <div style="font-size: 14px; opacity: 0.95; font-weight: 500;">AI Match Score</div>
             <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">Based on semantic similarity (70%) + keyword matching (30%)</div>
@@ -818,8 +693,11 @@ Explore All: Shows all available positions for maximum discovery">?</span>
       }
     });
 
-    // Auto-select first job if available
+    // Auto-select first job if available and load recommendations
     document.addEventListener('DOMContentLoaded', function() {
+      // Load job recommendations automatically
+      loadInitialRecommendations();
+      
       const firstJob = document.querySelector('.job-card');
       if (firstJob) {
         firstJob.click();

@@ -306,7 +306,13 @@ def edit_job(job_id):
         return redirect('/admin_dashboard')
     
     if request.method == 'GET':
-        applications = Application.query.filter_by(job_id=job_id).all()
+        # Use the same filtering as shortlist route for consistent scoring
+        applications = Application.query.filter(
+            Application.job_id == job_id,
+            Application.resume_text.isnot(None),
+            Application.resume_text != '',
+            ~Application.resume_text.like('Resume for %')
+        ).all()
         
         if applications and MATCHING_ENABLED:
             try:

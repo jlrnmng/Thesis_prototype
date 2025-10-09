@@ -88,7 +88,7 @@ def get_job_matches():
             results.append({
                 'job_id': job.id,
                 'role': job.role,
-                'score': float(score),
+                'score': round(float(score), 1),
                 'description_preview': (
                     job.description[:100] + '...'
                     if len(job.description) > 100
@@ -149,27 +149,42 @@ def explain_matchmaking(job_id):
         job = Job.query.get_or_404(job_id)
         print(f"DEBUG: Found job: {job.role}")
         
-        # Use matching service for improved hybrid scoring
+        # Use matching service for consistent scoring with main route
         from matching_service import get_matching_service
         ms = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
         
-        # Get similarity scores using both cosine and BM25 (same as shortlisting)
+        print(f"DEBUG: Using matching service for consistent scoring")
+        
+        # Use the EXACT same method as the main route (get_job_matches)
+        # This ensures the explanation score matches the displayed score in job cards
+        top_matches = ms.get_top_jobs_for_resume(user_resume_text, [job], top_n=1)
+        
+        if top_matches:
+            job_id_match, main_route_score = top_matches[0]
+            print(f"DEBUG: Main route score (matches job card display): {main_route_score:.1f}")
+            final_score = main_route_score
+        else:
+            print("WARNING: No matches returned from matching service")
+            final_score = 0
+        
+        # Get individual component scores for detailed breakdown
         job_desc = f"{job.role} {job.description}"
         cosine_scores = ms._get_cosine_similarity_scores(user_resume_text, [job_desc])
         bm25_scores = ms._get_bm25_scores(user_resume_text, [job_desc])
         
-        # Get raw scores
-        cosine_score = cosine_scores[0]  # Already 0-1 range
-        bm25_raw_score = bm25_scores[0]
+        cosine_score = cosine_scores[0] if cosine_scores else 0
+        bm25_raw_score = bm25_scores[0] if bm25_scores else 0
+        bm25_normalized = ms._normalize_scores([bm25_raw_score])[0] if bm25_scores else 0
         
-        # Normalize BM25 score to 0-1 range (same as shortlisting)
-        bm25_normalized = ms._normalize_scores([bm25_raw_score])[0]
-        
-        # Calculate final hybrid score using EXACT same formula as shortlisting:
-        # Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
         cosine_points = cosine_score * 70
         bm25_points = bm25_normalized * 30
-        final_score = cosine_points + bm25_points
+        calculated_total = cosine_points + bm25_points
+        
+        print(f"DEBUG: Component scores:")
+        print(f"  - Cosine: {cosine_score:.4f} -> {cosine_points:.1f} points")
+        print(f"  - BM25: {bm25_raw_score:.4f} -> {bm25_normalized:.3f} -> {bm25_points:.1f} points")
+        print(f"  - Calculated total: {calculated_total:.1f}")
+        print(f"  - Main route score: {main_route_score:.1f} (should match)")
 
         # Get key terms from both documents
         resume_terms = set(user_resume_text.lower().split())

@@ -251,90 +251,117 @@ class MatchingService:
             return [0.5] * len(documents)
     
     def _get_bm25_scores(self, query: str, documents: List[str]) -> List[float]:
-        """Get BM25 scores with preprocessing"""
+        """
+        Get BM25 scores with proper corpus handling.
+        BM25 requires multiple documents in corpus to work correctly.
+        """
         try:
             # Preprocess query and documents for better tokenization
             processed_query = self._preprocess_for_matching(query)
             processed_docs = [self._preprocess_for_matching(doc) for doc in documents]
             
-            # Tokenize preprocessed text
-            tokenized_corpus = [doc.split() for doc in processed_docs]
+            # If we only have one document, we need to create a pseudo-corpus
+            # to make BM25 work properly (avoid negative IDF issues)
+            if len(processed_docs) == 1:
+                # Create a diverse pseudo-corpus to establish proper IDF baselines
+                pseudo_docs = [
+                    "software engineer developer programming coding computer science technology",
+                    "management business marketing sales finance accounting administration",
+                    "design creative art graphic user interface experience research",
+                    "data science analytics machine learning artificial intelligence statistics",
+                    "healthcare medical nursing doctor clinical patient care treatment"
+                ]
+                # Add the actual document as the first item
+                full_corpus = [processed_docs[0]] + pseudo_docs
+                target_indices = [0]  # We only want the score for the first document
+            else:
+                # Multiple documents - use them directly
+                full_corpus = processed_docs
+                target_indices = list(range(len(processed_docs)))
+            
+            # Tokenize corpus and query
+            tokenized_corpus = [doc.split() for doc in full_corpus]
             tokenized_query = processed_query.split()
             
+            # Calculate BM25 scores
             bm25 = BM25Okapi(tokenized_corpus)
-            scores = bm25.get_scores(tokenized_query)
-            return scores.tolist()
+            all_scores = bm25.get_scores(tokenized_query)
+            
+            # Return only the scores for the target documents
+            target_scores = [all_scores[i] for i in target_indices]
+            
+            return target_scores
+            
         except Exception as e:
             print(f"Error getting BM25 scores: {e}")
             return [0] * len(documents)
     
     def _normalize_scores(self, scores: List[float]) -> List[float]:
-        """Normalize scores to 0-1"""
-        if not scores or max(scores) == min(scores):
-            return [0.5] * len(scores)
+        """
+        Normalize scores to 0-1 range with improved handling for BM25.
+        Now that BM25 gives positive scores, we can use better normalization.
+        """
+        if not scores:
+            return []
         
+        # For single score, normalize against typical BM25 ranges
+        if len(scores) == 1:
+            score = scores[0]
+            # BM25 with pseudo-corpus typically ranges from 0 to ~15
+            # Normalize using a reasonable scale
+            if score <= 0:
+                return [0.0]  # No relevance
+            elif score <= 2:
+                return [0.3]  # Low relevance  
+            elif score <= 5:
+                return [0.6]  # Good relevance
+            elif score <= 8:
+                return [0.8]  # High relevance
+            else:
+                return [1.0]  # Excellent relevance
+        
+        # For multiple scores, use min-max normalization
         min_score = min(scores)
         max_score = max(scores)
+        
+        # If all scores are the same, return middle value
+        if max_score == min_score:
+            return [0.5] * len(scores)
+        
         normalized = [(s - min_score) / (max_score - min_score) for s in scores]
         return normalized
     
     def get_top_jobs_for_resume(self, resume_text: str, all_jobs: List, 
-                                top_n: int = 3, cluster_mode: str = 'balanced',
-                                user_cluster_history: List[int] = None) -> List[Tuple[int, float]]:
+                                top_n: int = 3) -> List[Tuple[int, float]]:
         """
-        Get top job matches for resume using cluster-aware scoring.
+        Get top job matches for resume using automatic K-means classification.
         
         Args:
             resume_text: Resume content for matching
             all_jobs: List of job objects to match against
             top_n: Number of top matches to return
-            cluster_mode: 'strict', 'balanced', or 'off'
-            user_cluster_history: List of cluster IDs from user's previous applications
         
-        Formula: Final Score = (Cosine Similarity × 70) + (BM25 Score × 30) + Cluster Boost
+        Formula: Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
         """
         if not all_jobs:
             return []
         
-        # Filter jobs based on cluster mode
-        if cluster_mode == 'strict' and user_cluster_history:
-            # Only jobs in clusters user has applied to before
-            filtered_jobs = [job for job in all_jobs if job.cluster_id in user_cluster_history]
-            if not filtered_jobs:
-                # Fallback to all jobs if no cluster matches
-                filtered_jobs = all_jobs
-        else:
-            filtered_jobs = all_jobs
-        
-        job_texts = [f"{job.role} {job.description}" for job in filtered_jobs]
-        job_ids = [job.id for job in filtered_jobs]
+        job_texts = [f"{job.role} {job.description}" for job in all_jobs]
+        job_ids = [job.id for job in all_jobs]
         
         # Get cosine similarity scores (already 0-1 range)
         cosine_scores = self._get_cosine_similarity_scores(resume_text, job_texts)
         
-        # Get BM25 scores and normalize them to 0-1 range (same as shortlisting)
+        # Get BM25 scores and normalize them to 0-1 range
         bm25_scores = self._get_bm25_scores(resume_text, job_texts)
         bm25_scores_normalized = self._normalize_scores(bm25_scores)
         
-        # Apply the EXACT same formula as shortlisting:
+        # Apply the standard hybrid scoring formula:
         # Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
         final_scores = [
             (cos * 70) + (bm25_norm * 30)
             for cos, bm25_norm in zip(cosine_scores, bm25_scores_normalized)
         ]
-        
-        # Apply cluster-based boosting in balanced mode
-        if cluster_mode == 'balanced' and user_cluster_history:
-            boosted_scores = []
-            for i, (job, score) in enumerate(zip(filtered_jobs, final_scores)):
-                if job.cluster_id in user_cluster_history:
-                    # Boost jobs in familiar clusters by 15%
-                    cluster_boost = min(100, score * 1.15)
-                else:
-                    # Apply slight penalty for unfamiliar clusters to encourage exploration
-                    cluster_boost = score * 0.95
-                boosted_scores.append(cluster_boost)
-            final_scores = boosted_scores
         
         rankings = list(zip(job_ids, final_scores))
         rankings.sort(key=lambda x: x[1], reverse=True)

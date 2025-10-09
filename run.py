@@ -619,48 +619,33 @@ def get_job_matches():
         if not resume_text:
             return {'success': False, 'error': 'Could not extract resume text'}, 500
         
-        # Get cluster mode from query parameter
-        cluster_mode = request.args.get('cluster_mode', 'balanced')  # 'strict', 'balanced', 'off'
-        
-        # Get user's application history to understand cluster preferences
-        user_applications = Application.query.filter_by(user_id=user_id).all()
-        user_cluster_history = list(set([app.cluster_id for app in user_applications if app.cluster_id is not None]))
-        
         # Get all active jobs
         jobs = Job.query.filter_by(is_active=True).all()
         
-        # Get matching service and rank jobs with cluster awareness
+        # Get matching service and rank jobs using automatic K-means classification
         matching_service = get_matching_service(app.config.get('CHROMA_PATH', 'chroma_storage'))
         job_rankings = matching_service.get_top_jobs_for_resume(
             resume_text, 
             jobs,
-            top_n=10,  # Top 10 matches
-            cluster_mode=cluster_mode,
-            user_cluster_history=user_cluster_history
+            top_n=10  # Top 10 matches
         )
         
-        # Format results with cluster information
+        # Format results
         results = []
         for job_id, score in job_rankings:
             job = Job.query.get(job_id)
             if job:
-                is_familiar_cluster = job.cluster_id in user_cluster_history if user_cluster_history else False
                 results.append({
                     'job_id': job.id,
                     'role': job.role,
                     'match_score': round(score, 2),
                     'cluster_id': job.cluster_id,
-                    'is_familiar_cluster': is_familiar_cluster,
-                    'cluster_match_type': 'familiar' if is_familiar_cluster else 'new_opportunity',
                     'description_preview': job.description[:150] + '...' if len(job.description) > 150 else job.description
                 })
         
         return {
             'success': True, 
-            'matches': results,
-            'cluster_mode': cluster_mode,
-            'user_cluster_history': user_cluster_history,
-            'total_clusters_explored': len(user_cluster_history)
+            'matches': results
         }, 200
         
     except Exception as e:

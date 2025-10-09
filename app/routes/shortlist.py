@@ -78,59 +78,26 @@ def get_shortlist(job_id):
         # Get target job
         target_job = Job.query.get_or_404(job_id)
         
-        # Get cluster preference from query parameter (default: 'balanced')
-        cluster_mode = request.args.get('cluster_mode', 'balanced')  # 'strict', 'balanced', 'off'
-
-        # Get applications with cluster-aware filtering
-        if cluster_mode == 'strict':
-            # Only same cluster
-            applications = Application.query.filter(
-                Application.resume_text.isnot(None),
-                Application.resume_text != '',
-                ~Application.resume_text.like('Resume for %'),
-                Application.cluster_id == target_job.cluster_id
-            ).all()
-        elif cluster_mode == 'balanced':
-            # All applications, but will boost same-cluster scores
-            applications = Application.query.filter(
-                Application.resume_text.isnot(None),
-                Application.resume_text != '',
-                ~Application.resume_text.like('Resume for %')
-            ).all()
-        else:  # cluster_mode == 'off'
-            # Original behavior - all applications
-            applications = Application.query.filter(
-                Application.resume_text.isnot(None),
-                Application.resume_text != '',
-                ~Application.resume_text.like('Resume for %')
-            ).all()
+        # Get all applications with resume text for automatic matching
+        applications = Application.query.filter(
+            Application.resume_text.isnot(None),
+            Application.resume_text != '',
+            ~Application.resume_text.like('Resume for %')
+        ).all()
 
         if not applications:
             return jsonify({'message': 'No applications found with resume text'}), 404
 
-        # Use matching service for improved hybrid scoring
+        # Use matching service for automatic hybrid scoring (70% cosine + 30% BM25)
         from matching_service import get_matching_service
         ms = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
         
-        # Score applications against job using hybrid scoring (70% cosine + 30% BM25)
+        # Score applications against job using automatic K-means classification
         rankings = ms.rank_applicants_for_job(
             job_description=target_job.description,
             job_role=target_job.role,
             applications=applications
         )
-        
-        # Apply cluster-based score boosting in balanced mode
-        if cluster_mode == 'balanced':
-            boosted_rankings = []
-            for app_id, score in rankings:
-                app = next(a for a in applications if a.id == app_id)
-                if app.cluster_id == target_job.cluster_id:
-                    # Boost same-cluster candidates by 10%
-                    boosted_score = min(100, score * 1.1)
-                    boosted_rankings.append((app_id, boosted_score))
-                else:
-                    boosted_rankings.append((app_id, score))
-            rankings = sorted(boosted_rankings, key=lambda x: x[1], reverse=True)
         
         # Get top 5 matches
         top_matches = rankings[:5]
@@ -156,7 +123,7 @@ def get_shortlist(job_id):
                     'full_name': user.full_name
                 },
                 'contact_email': user.email,
-                'relevance_score': round(float(score), 3),
+                'relevance_score': round(float(score), 1),
                 'application_date': app.submission_date.strftime('%Y-%m-%d %H:%M'),
                 'resume_summary': app.resume_text[:300] + '...' if len(app.resume_text) > 300 else app.resume_text,
                 'cluster_category': app.cluster_id
@@ -209,76 +176,77 @@ def explain_shortlist(application_id):
         tokenized_resume = resume_text.lower().split()
         tokenized_job = job_text.lower().split()
 
-        # Calculate hybrid scores using the same matching service as user matchmaking
+        # Calculate hybrid scores using the exact same matching service logic as the main route
         try:
             from matching_service import get_matching_service
             ms = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
             
-            # Calculate scores using the same methods as user matchmaking
-            job_desc = f"{job.role} {job.description}"
-            cosine_scores = ms._get_cosine_similarity_scores(resume_text, [job_desc])
-            bm25_scores = ms._get_bm25_scores(resume_text, [job_desc])
-            
-            # Get raw scores
-            semantic_score = cosine_scores[0]  # Already 0-1 range
-            bm25_raw_score = bm25_scores[0]
-            
-            # Normalize BM25 score using the same method as matchmaking
-            bm25_normalized = ms._normalize_scores([bm25_raw_score])[0]
-            
             print(f"DEBUG: Using matching service for consistent scoring")
-            print(f"DEBUG: Cosine score: {semantic_score} -> {semantic_score * 70:.1f} points")
-            print(f"DEBUG: BM25 raw: {bm25_raw_score} -> normalized: {bm25_normalized:.3f} -> {bm25_normalized * 30:.1f} points")
+            
+            # Get ALL applications for the SAME JOB to ensure consistent scoring context
+            all_applications = Application.query.filter(
+                Application.job_id == job.id,
+                Application.resume_text.isnot(None),
+                Application.resume_text != '',
+                ~Application.resume_text.like('Resume for %')
+            ).all()
+            
+            if not all_applications:
+                print("WARNING: No applications found for consistent scoring")
+                overall_score = 0
+            else:
+                # Use the EXACT same method as the main route with ALL applications
+                # This ensures consistent BM25 normalization context
+                rankings = ms.rank_applicants_for_job(
+                    job_description=job.description,
+                    job_role=job.role,
+                    applications=all_applications  # All applications for consistent normalization
+                )
+                
+                # Find the score for our specific application
+                app_score_dict = {app_id: score for app_id, score in rankings}
+                overall_score = app_score_dict.get(application_id, 0)
+                print(f"DEBUG: Consistent score for app {application_id}: {overall_score:.1f}")
+        
+        except Exception as e:
+            print(f"ERROR: Failed to get consistent score: {e}")
+            overall_score = 0
+        
+        # Get individual component scores for detailed breakdown
+        try:
+            job_desc = f"{job.role} {job.description}"
+            
+            # Get raw cosine similarity (this is consistent regardless of context)
+            cosine_scores = ms._get_cosine_similarity_scores(resume_text, [job_desc])
+            semantic_score = cosine_scores[0] if cosine_scores else 0
+            cosine_points = semantic_score * 70
+            
+            # Calculate BM25 points by working backwards from overall score
+            # overall_score = cosine_points + bm25_points
+            # So: bm25_points = overall_score - cosine_points
+            bm25_points = max(0, overall_score - cosine_points)  # Ensure non-negative
+            bm25_normalized = bm25_points / 30 if bm25_points > 0 else 0  # Reverse the * 30
+            
+            # Get raw BM25 score for display purposes
+            bm25_scores = ms._get_bm25_scores(resume_text, [job_desc])
+            bm25_raw_score = bm25_scores[0] if bm25_scores else 0
+            
+            print(f"DEBUG: Component scores (derived from overall score):")
+            print(f"  - Overall score: {overall_score:.1f}")
+            print(f"  - Cosine: {semantic_score:.4f} -> {cosine_points:.1f} points")
+            print(f"  - BM25 points (derived): {bm25_points:.1f}")
+            print(f"  - BM25 normalized (derived): {bm25_normalized:.3f}")
+            print(f"  - BM25 raw (for display): {bm25_raw_score:.4f}")
+            print(f"  - Verification: {cosine_points:.1f} + {bm25_points:.1f} = {overall_score:.1f}")
             
         except Exception as e:
-            print(f"WARNING: Failed to use matching service, falling back to manual calculation: {e}")
-            # Fallback to manual calculation
-            from sentence_transformers import SentenceTransformer
-            from sklearn.metrics.pairwise import cosine_similarity
-            import numpy as np
-            
-            # Initialize SentenceTransformer model
-            try:
-                model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-            except Exception:
-                model = None
-                
-            # Calculate semantic similarity score (cosine similarity)
-            semantic_score = 0.5  # Default fallback
-            if model:
-                try:
-                    job_embedding = model.encode([job_text])
-                    resume_embedding = model.encode([resume_text])
-                    semantic_score = float(cosine_similarity(job_embedding, resume_embedding)[0][0])
-                except Exception as e:
-                    print(f"Error calculating semantic similarity: {e}")
-
-            # BM25 calculation fallback
-            tokenized_resume_corpus = [tokenized_resume]
-            bm25 = BM25Okapi(tokenized_resume_corpus)
-            bm25_raw_scores = bm25.get_scores(tokenized_job)
-            bm25_raw_score = float(bm25_raw_scores[0]) if len(bm25_raw_scores) > 0 else 0
-            
-            # Normalize BM25 score to 0-1 range
-            def normalize_bm25_score(score):
-                bm25_min, bm25_max = -20.0, 15.0
-                normalized = (score - bm25_min) / (bm25_max - bm25_min)
-                return max(0, min(1, normalized))
-            
-            bm25_normalized = normalize_bm25_score(bm25_raw_score)
-        
-        # Calculate final score using the EXACT same methodology as user matchmaking:
-        # Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
-        cosine_points = semantic_score * 70          # Cosine score (0-1) × 70 = 0-70 points
-        bm25_points = bm25_normalized * 30           # Normalized BM25 (0-1) × 30 = 0-30 points
-        final_match_score = cosine_points + bm25_points
-        
-        print(f"DEBUG: Cosine score: {semantic_score} -> {cosine_points:.1f} points")
-        print(f"DEBUG: BM25 raw: {bm25_raw_score} -> normalized: {bm25_normalized:.3f} -> {bm25_points:.1f} points")
-        print(f"DEBUG: Final match score: {final_match_score:.1f}")
-        
-        # Use the final match score as the overall score for compatibility
-        overall_score = final_match_score
+            print(f"ERROR: Failed to calculate component scores: {e}")
+            # Use fallback component calculations based on overall score
+            semantic_score = (overall_score / 100) * 0.7  # Approximate semantic portion
+            bm25_normalized = (overall_score / 100) * 0.3  # Approximate BM25 portion  
+            bm25_raw_score = 5.0  # Default display value
+            cosine_points = semantic_score * 70
+            bm25_points = bm25_normalized * 30
 
         # Calculate matching terms using the same approach as user matchmaking
         job_desc = f"{job.role} {job.description}"
@@ -327,16 +295,16 @@ def explain_shortlist(application_id):
         print(f"DEBUG: Token coverage: {token_coverage*100:.1f}%")
 
         # Enhanced recommendation logic using the new scoring methodology
-        if final_match_score > 80:
+        if overall_score > 80:
             recommendation_status = 'Highly Recommended'
             score_interpretation = 'Excellent match with strong semantic and keyword alignment'
-        elif final_match_score > 65:
+        elif overall_score > 65:
             recommendation_status = 'Recommended'
             score_interpretation = 'Good match with solid relevant experience'
-        elif final_match_score > 50:
+        elif overall_score > 50:
             recommendation_status = 'Consider'
             score_interpretation = 'Moderate match with some relevant qualifications'
-        elif final_match_score > 35:
+        elif overall_score > 35:
             recommendation_status = 'Review Required'
             score_interpretation = 'Limited match, requires detailed evaluation'
         else:
@@ -345,7 +313,7 @@ def explain_shortlist(application_id):
 
         # Calculate detailed score breakdown components using the new methodology
         score_breakdown = {
-            'final_match_score': round(final_match_score, 1),
+            'overall_score': round(overall_score, 1),
             'cosine_raw_score': round(semantic_score, 3),
             'bm25_raw_score': round(bm25_raw_score, 3),
             'bm25_normalized_score': round(bm25_normalized, 3),
@@ -361,7 +329,7 @@ def explain_shortlist(application_id):
 
         # Generate detailed explanation using the same style as matchmaking
         detailed_explanation_data = _generate_detailed_explanation(
-            final_match_score, semantic_score, bm25_normalized, semantic_score, bm25_normalized, token_coverage, len(formatted_terms), 
+            overall_score, semantic_score, bm25_normalized, semantic_score, bm25_normalized, token_coverage, len(formatted_terms), 
             user.first_name, job.role, formatted_terms[:5]
         )
 
@@ -378,7 +346,7 @@ def explain_shortlist(application_id):
                 'department_cluster': job.cluster_id
             },
             'scores': {
-                'overall': round(final_match_score, 1),
+                'overall': round(overall_score, 1),
                 'cosine_points': round(cosine_points, 1),
                 'bm25_points': round(bm25_points, 1),
                 'cosine_raw': round(semantic_score, 3),
@@ -393,7 +361,7 @@ def explain_shortlist(application_id):
             },
             'insights': detailed_explanation_data['insights'],
             'recommendation': detailed_explanation_data['recommendation'],
-            'recommendation_reasoning': _generate_recommendation_reasoning(final_match_score, len(formatted_terms)),
+            'recommendation_reasoning': _generate_recommendation_reasoning(overall_score, len(formatted_terms)),
             'scoring_explanation': detailed_explanation_data['scoring_explanation']
         }
 
