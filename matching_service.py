@@ -82,15 +82,49 @@ class MatchingService:
                 embedding_function=self.embedding_function
             )
     
-    def add_resume_to_db(self, user_id: int, resume_text: str):
-        """Add resume to ChromaDB"""
+    def predict_resume_cluster(self, resume_text: str) -> int:
+        """
+        Predict which cluster a resume belongs to using the same K-means model used for jobs.
+        This creates a bridge between resume content and job categories.
+        """
         try:
+            # Import here to avoid circular imports
+            from app import model, kmeans_model
+            
+            if not model or not kmeans_model:
+                print("Warning: Models not loaded, returning default cluster")
+                return 0
+            
+            # Preprocess resume text for better clustering
+            processed_text = self._preprocess_for_matching(resume_text)
+            
+            # Vectorize using same SBERT model as jobs
+            resume_vector = model.encode([processed_text])
+            
+            # Predict cluster using same K-means model as jobs
+            cluster_id = int(kmeans_model.predict(resume_vector)[0])
+            
+            return cluster_id
+            
+        except Exception as e:
+            print(f"Error predicting resume cluster: {e}")
+            return 0  # Default cluster
+    
+    def add_resume_to_db(self, user_id: int, resume_text: str):
+        """Add resume to ChromaDB with cluster prediction"""
+        try:
+            # Predict resume cluster
+            predicted_cluster = self.predict_resume_cluster(resume_text)
+            
             self.resumes_collection.upsert(
                 documents=[resume_text],
                 ids=[f"user_{user_id}"],
-                metadatas=[{"user_id": user_id}]
+                metadatas=[{
+                    "user_id": user_id,
+                    "predicted_cluster": predicted_cluster  # Add cluster metadata
+                }]
             )
-            return True
+            return True, predicted_cluster
         except Exception as e:
             # Avoid printing verbose telemetry errors (Posthog signature mismatches)
             # which surface from chromadb's telemetry. Provide a concise warning
@@ -120,20 +154,21 @@ class MatchingService:
                         name="resumes",
                         embedding_function=self.embedding_function
                     )
-
+                
+                # Retry the operation
+                predicted_cluster = self.predict_resume_cluster(resume_text)
                 self.resumes_collection.upsert(
                     documents=[resume_text],
                     ids=[f"user_{user_id}"],
-                    metadatas=[{"user_id": user_id}]
+                    metadatas=[{
+                        "user_id": user_id,
+                        "predicted_cluster": predicted_cluster
+                    }]
                 )
-                return True
+                return True, predicted_cluster
             except Exception as e2:
-                err2 = str(e2)
-                if 'Posthog.capture' in err2 or 'posthog' in err2.lower():
-                    print("Warning: ChromaDB telemetry error on retry (suppressed details)")
-                else:
-                    print(f"Error adding resume to ChromaDB (retry): {err2}")
-                return False
+                print(f"Error adding resume to ChromaDB (retry): {e2}")
+                return False, 0
     
     def add_job_to_db(self, job_id: int, job_description: str, job_role: str):
         """Add job to ChromaDB"""
@@ -244,16 +279,35 @@ class MatchingService:
         return normalized
     
     def get_top_jobs_for_resume(self, resume_text: str, all_jobs: List, 
-                                top_n: int = 3) -> List[Tuple[int, float]]:
+                                top_n: int = 3, cluster_mode: str = 'balanced',
+                                user_cluster_history: List[int] = None) -> List[Tuple[int, float]]:
         """
-        Get top job matches for resume using the EXACT same formula as candidate shortlisting.
-        Formula: Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
+        Get top job matches for resume using cluster-aware scoring.
+        
+        Args:
+            resume_text: Resume content for matching
+            all_jobs: List of job objects to match against
+            top_n: Number of top matches to return
+            cluster_mode: 'strict', 'balanced', or 'off'
+            user_cluster_history: List of cluster IDs from user's previous applications
+        
+        Formula: Final Score = (Cosine Similarity × 70) + (BM25 Score × 30) + Cluster Boost
         """
         if not all_jobs:
             return []
         
-        job_texts = [f"{job.role} {job.description}" for job in all_jobs]
-        job_ids = [job.id for job in all_jobs]
+        # Filter jobs based on cluster mode
+        if cluster_mode == 'strict' and user_cluster_history:
+            # Only jobs in clusters user has applied to before
+            filtered_jobs = [job for job in all_jobs if job.cluster_id in user_cluster_history]
+            if not filtered_jobs:
+                # Fallback to all jobs if no cluster matches
+                filtered_jobs = all_jobs
+        else:
+            filtered_jobs = all_jobs
+        
+        job_texts = [f"{job.role} {job.description}" for job in filtered_jobs]
+        job_ids = [job.id for job in filtered_jobs]
         
         # Get cosine similarity scores (already 0-1 range)
         cosine_scores = self._get_cosine_similarity_scores(resume_text, job_texts)
@@ -268,6 +322,19 @@ class MatchingService:
             (cos * 70) + (bm25_norm * 30)
             for cos, bm25_norm in zip(cosine_scores, bm25_scores_normalized)
         ]
+        
+        # Apply cluster-based boosting in balanced mode
+        if cluster_mode == 'balanced' and user_cluster_history:
+            boosted_scores = []
+            for i, (job, score) in enumerate(zip(filtered_jobs, final_scores)):
+                if job.cluster_id in user_cluster_history:
+                    # Boost jobs in familiar clusters by 15%
+                    cluster_boost = min(100, score * 1.15)
+                else:
+                    # Apply slight penalty for unfamiliar clusters to encourage exploration
+                    cluster_boost = score * 0.95
+                boosted_scores.append(cluster_boost)
+            final_scores = boosted_scores
         
         rankings = list(zip(job_ids, final_scores))
         rankings.sort(key=lambda x: x[1], reverse=True)

@@ -77,13 +77,33 @@ def get_shortlist(job_id):
     try:
         # Get target job
         target_job = Job.query.get_or_404(job_id)
+        
+        # Get cluster preference from query parameter (default: 'balanced')
+        cluster_mode = request.args.get('cluster_mode', 'balanced')  # 'strict', 'balanced', 'off'
 
-        # Get all applications
-        applications = Application.query.filter(
-            Application.resume_text.isnot(None),
-            Application.resume_text != '',
-            ~Application.resume_text.like('Resume for %')
-        ).all()
+        # Get applications with cluster-aware filtering
+        if cluster_mode == 'strict':
+            # Only same cluster
+            applications = Application.query.filter(
+                Application.resume_text.isnot(None),
+                Application.resume_text != '',
+                ~Application.resume_text.like('Resume for %'),
+                Application.cluster_id == target_job.cluster_id
+            ).all()
+        elif cluster_mode == 'balanced':
+            # All applications, but will boost same-cluster scores
+            applications = Application.query.filter(
+                Application.resume_text.isnot(None),
+                Application.resume_text != '',
+                ~Application.resume_text.like('Resume for %')
+            ).all()
+        else:  # cluster_mode == 'off'
+            # Original behavior - all applications
+            applications = Application.query.filter(
+                Application.resume_text.isnot(None),
+                Application.resume_text != '',
+                ~Application.resume_text.like('Resume for %')
+            ).all()
 
         if not applications:
             return jsonify({'message': 'No applications found with resume text'}), 404
@@ -98,6 +118,19 @@ def get_shortlist(job_id):
             job_role=target_job.role,
             applications=applications
         )
+        
+        # Apply cluster-based score boosting in balanced mode
+        if cluster_mode == 'balanced':
+            boosted_rankings = []
+            for app_id, score in rankings:
+                app = next(a for a in applications if a.id == app_id)
+                if app.cluster_id == target_job.cluster_id:
+                    # Boost same-cluster candidates by 10%
+                    boosted_score = min(100, score * 1.1)
+                    boosted_rankings.append((app_id, boosted_score))
+                else:
+                    boosted_rankings.append((app_id, score))
+            rankings = sorted(boosted_rankings, key=lambda x: x[1], reverse=True)
         
         # Get top 5 matches
         top_matches = rankings[:5]

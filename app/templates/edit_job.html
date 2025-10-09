@@ -643,7 +643,50 @@
 
       <!-- Applicants Section -->
       <div class="card applicants-section">
-        <h2>Applicants (Ranked by Match Score)</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="margin: 0;">Applicants (Ranked by Match Score)</h2>
+          
+          <!-- Shortlisting Style Selector -->
+          <div class="shortlist-style-selector">
+            <label for="shortlistMode" style="font-size: 12px; color: #666; margin-right: 8px;">Filter:</label>
+            <select id="shortlistMode" onchange="updateShortlist()" title="Choose candidate filtering preference" style="
+              padding: 6px 10px; 
+              border: 1px solid #ddd; 
+              border-radius: 4px; 
+              font-size: 12px; 
+              background: white;
+              cursor: pointer;
+            ">
+              <option value="balanced" title="All candidates with domain preference">🎯 Balanced</option>
+              <option value="strict" title="Only candidates from same domain">🔍 Domain Match</option>
+              <option value="off" title="All candidates regardless of domain">🌟 All Candidates</option>
+            </select>
+            <span style="
+              display: inline-block; 
+              margin-left: 6px; 
+              width: 16px; 
+              height: 16px; 
+              background: #2eccb0; 
+              color: white; 
+              text-align: center; 
+              border-radius: 50%; 
+              font-size: 10px; 
+              line-height: 16px; 
+              cursor: help;
+              user-select: none;
+            " title="Balanced: Shows all candidates, boosts domain-matching ones
+Domain Match: Only shows candidates from the same career domain
+All Candidates: Shows everyone without domain filtering">?</span>
+          </div>
+        </div>
+        
+        <!-- Loading state for shortlist -->
+        <div id="shortlistLoading" style="display: none; text-align: center; padding: 20px; color: #666;">
+          <span style="font-size: 18px;">🔄</span> Updating candidate list...
+        </div>
+        
+        <!-- Applicants container -->
+        <div id="applicantsContainer">
         {% if applications %}
           {% for application in applications %}
           <div class="applicant-card" data-application-id="{{ application.id }}" style="cursor: pointer; transition: all 0.3s ease;">
@@ -682,7 +725,8 @@
             No applicants yet. Share this job posting to attract candidates!
           </div>
         {% endif %}
-      </div>
+        </div> <!-- End applicantsContainer -->
+      </div> <!-- End applicants-section -->
     </div>
   </main>
 
@@ -691,12 +735,123 @@
   </footer>
 
   <script>
-    // Track expanded state for each applicant
-    const expandedStates = {};
-
-    // Initialize event listeners when the page loads
-    document.addEventListener('DOMContentLoaded', function() {
-      // Add click event listeners to all applicant cards
+    // Function to update shortlist based on cluster mode
+    function updateShortlist() {
+      const shortlistMode = document.getElementById('shortlistMode').value;
+      const applicantsContainer = document.getElementById('applicantsContainer');
+      const shortlistLoading = document.getElementById('shortlistLoading');
+      const jobId = window.location.pathname.split('/').pop(); // Extract job ID from URL
+      
+      // Show loading state
+      shortlistLoading.style.display = 'block';
+      applicantsContainer.style.display = 'none';
+      
+      // Fetch updated shortlist with cluster mode
+      fetch(`/api/shortlist/${jobId}?cluster_mode=${shortlistMode}`)
+        .then(response => response.json())
+        .then(data => {
+          shortlistLoading.style.display = 'none';
+          applicantsContainer.style.display = 'block';
+          
+          if (data.candidates) {
+            // Clear existing applicants
+            applicantsContainer.innerHTML = '';
+            
+            // Add cluster mode info
+            if (data.shortlist_summary) {
+              const modeInfo = getShortlistModeDescription(shortlistMode);
+              applicantsContainer.innerHTML += `
+                <div style="background: #e3f2fd; border-radius: 6px; padding: 12px; margin-bottom: 15px; font-size: 13px;">
+                  <strong>📊 ${modeInfo.title}:</strong> ${modeInfo.description}
+                  <br><small style="color: #666;">Showing ${data.candidates.length} of ${data.shortlist_summary.total_candidates_reviewed} total candidates</small>
+                </div>
+              `;
+            }
+            
+            // Render applicant cards
+            data.candidates.forEach((candidate, index) => {
+              const applicantCard = document.createElement('div');
+              applicantCard.className = 'applicant-card';
+              applicantCard.setAttribute('data-application-id', candidate.application_id);
+              applicantCard.style.cssText = 'cursor: pointer; transition: all 0.3s ease;';
+              
+              const clusterBadge = candidate.cluster_category !== null ? 
+                `<span style="background: #4caf50; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 6px;">Cluster ${candidate.cluster_category}</span>` : '';
+              
+              applicantCard.innerHTML = `
+                <div class="applicant-info">
+                  <p class="applicant-name">${candidate.candidate_name.full_name} ${clusterBadge}</p>
+                  <p class="applicant-email">📧 ${candidate.contact_email}</p>
+                  <p class="applicant-date">Applied: ${candidate.application_date}</p>
+                </div>
+                <div class="match-score">
+                  <div class="score-circle">${Math.round(candidate.relevance_score)}</div>
+                  <div class="score-label">Points</div>
+                </div>
+                <button class="view-resume-btn" data-resume-url="/view_resume/${candidate.candidate_id}">View Resume</button>
+                
+                <!-- Explanation Section (Initially Hidden) -->
+                <div id="explanation-${candidate.application_id}" class="explanation-section" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e8f5f0;">
+                  <div class="explanation-header">
+                    <h4 style="color: #2c3e50; margin-bottom: 15px; display: flex; align-items: center;">
+                      <span style="margin-right: 10px;">🔍</span>
+                      Match Analysis
+                    </h4>
+                    <div class="loading-spinner" style="text-align: center; padding: 20px;">
+                      <span style="color: #27ae98;">Loading explanation...</span>
+                    </div>
+                  </div>
+                  <div class="explanation-content" style="display: none;">
+                    <!-- Content will be populated by JavaScript -->
+                  </div>
+                </div>
+              `;
+              
+              applicantsContainer.appendChild(applicantCard);
+            });
+            
+            // Re-initialize event listeners for new cards
+            initializeApplicantEventListeners();
+            
+          } else {
+            applicantsContainer.innerHTML = '<div class="no-applicants">No applicants found with current filter settings.</div>';
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching shortlist:', error);
+          shortlistLoading.style.display = 'none';
+          applicantsContainer.style.display = 'block';
+          applicantsContainer.innerHTML = '<div class="no-applicants" style="color: #dc3545;">Error loading candidates. Please refresh the page.</div>';
+        });
+    }
+    
+    function getShortlistModeDescription(mode) {
+      switch(mode) {
+        case 'strict':
+          return {
+            title: 'Domain Match',
+            description: 'Showing only candidates who have applied to similar job categories.'
+          };
+        case 'balanced':
+          return {
+            title: 'Balanced View',
+            description: 'Showing all candidates, with preference for domain-relevant experience.'
+          };
+        case 'off':
+          return {
+            title: 'All Candidates',
+            description: 'Showing all applicants regardless of their previous application domains.'
+          };
+        default:
+          return {
+            title: 'Smart Filtering',
+            description: 'AI-powered candidate ranking and filtering.'
+          };
+      }
+    }
+    
+    function initializeApplicantEventListeners() {
+      // Re-add click event listeners to all applicant cards
       const applicantCards = document.querySelectorAll('.applicant-card[data-application-id]');
       applicantCards.forEach(card => {
         card.addEventListener('click', function(event) {
@@ -706,19 +861,27 @@
           }
           
           const applicationId = this.getAttribute('data-application-id');
-          toggleExplanation(parseInt(applicationId));
+          toggleExplanation(applicationId);
         });
       });
-
-      // Add click event listeners to all resume buttons
+      
+      // Re-add resume button event listeners
       const resumeButtons = document.querySelectorAll('.view-resume-btn[data-resume-url]');
       resumeButtons.forEach(button => {
         button.addEventListener('click', function(event) {
-          event.stopPropagation(); // Prevent triggering the card click
+          event.stopPropagation();
           const resumeUrl = this.getAttribute('data-resume-url');
           window.open(resumeUrl, '_blank');
         });
       });
+    }
+
+    // Track expanded state for each applicant
+    const expandedStates = {};
+
+    // Initialize event listeners when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeApplicantEventListeners();
     });
 
     function toggleExplanation(applicationId) {
