@@ -758,10 +758,16 @@ if __name__ == '__main__':
         pass
 
     print("\n=== Starting Flask App ===")
-    print("Access the application at: http://localhost:5000")
-    print("Login page: http://localhost:5000/login")
-    print("Register page: http://localhost:5000/register")
+    
+    # Get port from environment for production deployment
+    port = int(os.environ.get('PORT', 5000))
+    debug_mode = os.environ.get('FLASK_ENV') != 'production'
+    
+    print(f"Access the application at: http://localhost:{port}")
+    print(f"Login page: http://localhost:{port}/login")
+    print(f"Register page: http://localhost:{port}/register")
     print(f"Matching service: {'ENABLED' if MATCHING_ENABLED else 'DISABLED'}")
+    print(f"Debug mode: {'ON' if debug_mode else 'OFF'}")
     
     # Start server
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)

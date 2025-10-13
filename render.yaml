@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: hirely-app
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: |
+      pip install -r requirements.txt
+      mkdir -p instance/uploads chroma_storage data
+      python -c "from app import create_app, db; app = create_app(); app.app_context().push(); db.create_all()"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 4 --timeout 120 run:app"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: CHROMA_DISABLE_TELEMETRY
+        value: "1"
