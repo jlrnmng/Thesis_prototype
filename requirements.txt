@@ -30,15 +30,15 @@ watchfiles==1.1.0  # File watching for development
 
 # Machine Learning and NLP
 sentence-transformers==2.4.0
-scikit-learn==1.6.0
+scikit-learn==1.4.0
 rank-bm25==0.2.2
-numpy==1.26.4
-torch==2.0.1
+numpy==1.24.4
+torch==2.5.1
 
 # Transformers and Models
-transformers==4.36.0
-tokenizers==0.15.0
-huggingface-hub==0.20.0
+transformers==4.40.0
+tokenizers==0.19.0
+huggingface-hub==0.23.0
 
 # PDF Processing
 pypdf2==3.0.1
