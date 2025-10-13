@@ -31,7 +31,7 @@ python scripts/init_database.py
 python scripts/init_chroma.py
 
 # Run the application
-python run.py
+python main.py
 ```
 
 Visit: http://localhost:5000
@@ -78,7 +78,7 @@ Hirely/
 ├── uploads/                    # User uploaded files (resumes, etc.)
 ├── matching_service.py         # AI matching service core
 ├── resume_extractor.py         # Resume text extraction utilities
-├── run.py                     # Application entry point
+├── main.py                     # Application entry point
 └── requirements.txt           # Python dependencies
 ```
 

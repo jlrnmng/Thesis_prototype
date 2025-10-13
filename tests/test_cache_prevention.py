@@ -141,7 +141,7 @@ if __name__ == '__main__':
         print("\n" + "=" * 60)
         print("MANUAL TESTING INSTRUCTIONS")
         print("=" * 60)
-        print("1. Start the web application: python run.py")
+        print("1. Start the web application: python main.py")
         print("2. Login to your account (user or admin)")
         print("3. Navigate to dashboard")
         print("4. Logout using the logout button")
