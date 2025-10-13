@@ -628,7 +628,6 @@
         <div style="line-height: 1.8;">
           <p><strong>Posted:</strong> {{ job.created_at.strftime('%B %d, %Y at %I:%M %p') if job.created_at else 'N/A' }}</p>
           <p><strong>Status:</strong> 
-          <p><strong>Status:</strong>
                 {% if job.is_active %}
                     <span style="color: #27ae98; font-weight: 600;">Active</span>
                 {% else %}
