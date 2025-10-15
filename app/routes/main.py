@@ -133,6 +133,10 @@ def user_dashboard():
     
     print(f"DEBUG: MATCHING_ENABLED: {MATCHING_ENABLED}")
     
+    # Initialize all jobs with 0 score first (fallback)
+    for job in jobs:
+        job.match_score = 0
+    
     if MATCHING_ENABLED:
         try:
             resume_text = None
@@ -161,22 +165,37 @@ def user_dashboard():
                         print(f"DEBUG: Failed to extract resume text: {e}")
             
             if resume_text and len(resume_text.strip()) > 0:
-                matching_service = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
-                job_rankings = matching_service.get_top_jobs_for_resume(
-                    resume_text, 
-                    jobs,
-                    top_n=len(jobs)
-                )
-                
-                print(f"DEBUG: Job rankings: {job_rankings[:3]}")  # Show first 3 rankings
-                
-                score_dict = {job_id: score for job_id, score in job_rankings}
-                for job in jobs:
-                    job.match_score = round(score_dict.get(job.id, 0), 0)
-                
-                jobs.sort(key=lambda x: x.match_score, reverse=True)
-                print(f"DEBUG: Calculated match scores for {len(jobs)} jobs")
-                print(f"DEBUG: Top 3 job scores: {[(job.role, job.match_score) for job in jobs[:3]]}")
+                try:
+                    print("DEBUG: Starting matching service calculation...")
+                    matching_service = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
+                    
+                    if matching_service is None:
+                        print("DEBUG: Matching service is None - skipping AI matching")
+                        raise Exception("Matching service unavailable")
+                    
+                    print(f"DEBUG: Calculating rankings for {len(jobs)} jobs...")
+                    job_rankings = matching_service.get_top_jobs_for_resume(
+                        resume_text, 
+                        jobs,
+                        top_n=len(jobs)
+                    )
+                    
+                    print(f"DEBUG: Job rankings: {job_rankings[:3]}")  # Show first 3 rankings
+                    
+                    score_dict = {job_id: score for job_id, score in job_rankings}
+                    for job in jobs:
+                        job.match_score = round(score_dict.get(job.id, 0), 0)
+                    
+                    jobs.sort(key=lambda x: x.match_score, reverse=True)
+                    print(f"DEBUG: Calculated match scores for {len(jobs)} jobs")
+                    print(f"DEBUG: Top 3 job scores: {[(job.role, job.match_score) for job in jobs[:3]]}")
+                except Exception as matching_error:
+                    print(f"ERROR: AI matching failed: {matching_error}")
+                    import traceback
+                    traceback.print_exc()
+                    # Fallback: set all scores to 0
+                    for job in jobs:
+                        job.match_score = 0
             else:
                 print("DEBUG: No resume text available - user needs to upload resume or apply to a job")
                 for job in jobs:
@@ -186,12 +205,10 @@ def user_dashboard():
             print(f"ERROR: Failed to calculate job matches: {e}")
             import traceback
             traceback.print_exc()
-            for job in jobs:
-                job.match_score = 0
+            # Jobs already have match_score = 0 from initialization above
+            print("DEBUG: Using fallback - all jobs scored 0 due to matching error")
     else:
-        print("DEBUG: Matching not enabled - setting all scores to 0")
-        for job in jobs:
-            job.match_score = 0
+        print("DEBUG: Matching not enabled - all jobs already scored 0")
     
     applied_job_ids = []
     
