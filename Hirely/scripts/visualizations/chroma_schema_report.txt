@@ -1,0 +1,29 @@
+ChromaDB Schema Analysis Report
+==================================================
+
+Analysis Timestamp: 2025-10-15T13:40:18.529510
+Total Collections: 2
+Total Documents: 30
+
+1. Collection: resumes
+   Document Count: 14
+   Metadata Fields: user_id, preprocessed
+   ID Patterns: {'user': 14}
+   Document Length Stats:
+     - Min: 729
+     - Max: 10822
+     - Mean: 3363.5
+     - Median: 1321.0
+   Sample IDs: user_5, user_6, user_7
+
+2. Collection: jobs
+   Document Count: 16
+   Metadata Fields: role, job_id
+   ID Patterns: {'job': 16}
+   Document Length Stats:
+     - Min: 66
+     - Max: 1447
+     - Mean: 768.6
+     - Median: 855.5
+   Sample IDs: job_1, job_2, job_3
+

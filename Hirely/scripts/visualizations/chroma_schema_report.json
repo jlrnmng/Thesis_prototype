@@ -1,0 +1,76 @@
+{
+  "collections": [
+    {
+      "name": "resumes",
+      "document_count": 14,
+      "sample_ids": [
+        "user_5",
+        "user_6",
+        "user_7",
+        "user_8",
+        "user_10"
+      ],
+      "metadata_fields": [
+        "user_id",
+        "preprocessed"
+      ],
+      "id_patterns": {
+        "user": 14
+      },
+      "document_lengths": [
+        1798,
+        763,
+        736,
+        752,
+        729,
+        746,
+        777,
+        844,
+        4824,
+        9216,
+        10822,
+        3264,
+        8800,
+        3018
+      ]
+    },
+    {
+      "name": "jobs",
+      "document_count": 16,
+      "sample_ids": [
+        "job_1",
+        "job_2",
+        "job_3",
+        "job_4",
+        "job_5"
+      ],
+      "metadata_fields": [
+        "role",
+        "job_id"
+      ],
+      "id_patterns": {
+        "job": 16
+      },
+      "document_lengths": [
+        1447,
+        884,
+        875,
+        793,
+        850,
+        861,
+        85,
+        72,
+        66,
+        1058,
+        1146,
+        702,
+        691,
+        725,
+        993,
+        1050
+      ]
+    }
+  ],
+  "total_documents": 30,
+  "analysis_timestamp": "2025-10-15T13:40:18.529510"
+}

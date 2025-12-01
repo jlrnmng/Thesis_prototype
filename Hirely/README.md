@@ -227,7 +227,29 @@ python scripts/reset_chroma.py
 
 # Import bulk data
 python scripts/import_data_to_chroma.py
+
+# Synchronize ChromaDB with SQLite database
+python scripts/sync_chroma_db.py
+
+# Quick schema check (terminal output)
+python scripts/check_chroma_schema.py
+
+# Full schema analysis with visualizations
+python scripts/analyze_chroma_db.py
 ```
+
+### ChromaDB Schema Analysis
+The system includes comprehensive tools for analyzing and visualizing the ChromaDB schema:
+
+- **Quick Check**: `check_chroma_schema.py` - Terminal-based overview
+- **Full Analysis**: `analyze_chroma_db.py` - Generates PNG visualizations and detailed reports
+- **Synchronization**: `sync_chroma_db.py` - Ensures SQLite and ChromaDB consistency
+
+Generated visualizations include:
+- Collection overview with document distribution
+- Document length analysis and patterns
+- Metadata field completeness heatmaps
+- Detailed schema reports (JSON and text)
 
 ### Create Test Data
 ```bash

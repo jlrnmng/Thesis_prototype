@@ -158,46 +158,22 @@ def user_dashboard():
                 upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
                 resume_path = os.path.join(upload_folder, user.resume)
                 if os.path.exists(resume_path):
-                    try:
-                        resume_text = extract_resume_text(resume_path, preprocess=True)
-                        print(f"DEBUG: Extracted resume text: {len(resume_text)} chars")
-                    except Exception as e:
-                        print(f"DEBUG: Failed to extract resume text: {e}")
+                    resume_text = extract_resume_text(resume_path, preprocess=True)
             
             if resume_text and len(resume_text.strip()) > 0:
-                try:
-                    print("DEBUG: Starting matching service calculation...")
-                    matching_service = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
-                    
-                    if matching_service is None:
-                        print("DEBUG: Matching service is None - skipping AI matching")
-                        raise Exception("Matching service unavailable")
-                    
-                    print(f"DEBUG: Calculating rankings for {len(jobs)} jobs...")
-                    job_rankings = matching_service.get_top_jobs_for_resume(
-                        resume_text, 
-                        jobs,
-                        top_n=len(jobs)
-                    )
-                    
-                    print(f"DEBUG: Job rankings: {job_rankings[:3]}")  # Show first 3 rankings
-                    
-                    score_dict = {job_id: score for job_id, score in job_rankings}
-                    for job in jobs:
-                        job.match_score = round(score_dict.get(job.id, 0), 0)
-                    
-                    jobs.sort(key=lambda x: x.match_score, reverse=True)
-                    print(f"DEBUG: Calculated match scores for {len(jobs)} jobs")
-                    print(f"DEBUG: Top 3 job scores: {[(job.role, job.match_score) for job in jobs[:3]]}")
-                except Exception as matching_error:
-                    print(f"ERROR: AI matching failed: {matching_error}")
-                    import traceback
-                    traceback.print_exc()
-                    # Fallback: set all scores to 0
-                    for job in jobs:
-                        job.match_score = 0
+                matching_service = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
+                job_rankings = matching_service.get_top_jobs_for_resume(
+                    resume_text, 
+                    jobs,
+                    top_n=len(jobs)
+                )
+                
+                score_dict = {job_id: score for job_id, score in job_rankings}
+                for job in jobs:
+                    job.match_score = round(score_dict.get(job.id, 0), 0)
+                
+                jobs.sort(key=lambda x: x.match_score, reverse=True)
             else:
-                print("DEBUG: No resume text available - user needs to upload resume or apply to a job")
                 for job in jobs:
                     job.match_score = 0
                     
@@ -286,13 +262,14 @@ def post_job():
         db.session.add(new_job)
         db.session.commit()
         
+        # Ensure job is synchronized to ChromaDB with automatic retry
         if MATCHING_ENABLED:
-            try:
-                matching_service = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
-                matching_service.add_job_to_db(new_job.id, description, role)
-                print(f"DEBUG: Job {new_job.id} added to ChromaDB")
-            except Exception as e:
-                print(f"WARNING: Failed to add job to ChromaDB: {e}")
+            from app.utils.chroma_sync import ensure_job_synced
+            sync_success = ensure_job_synced(new_job.id, description, role)
+            if sync_success:
+                print(f"SUCCESS: Job {new_job.id} immediately synced to ChromaDB")
+            else:
+                print(f"INFO: Job {new_job.id} queued for background sync to ChromaDB")
         
         flash('Job posted successfully!', 'success')
         return redirect('/admin_dashboard')
@@ -369,13 +346,14 @@ def edit_job(job_id):
         job.description = description
         db.session.commit()
         
+        # Ensure job update is synchronized to ChromaDB with automatic retry
         if MATCHING_ENABLED:
-            try:
-                matching_service = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
-                matching_service.add_job_to_db(job.id, description, role)
-                print(f"DEBUG: Job {job.id} updated in ChromaDB")
-            except Exception as e:
-                print(f"WARNING: Failed to update job in ChromaDB: {e}")
+            from app.utils.chroma_sync import ensure_job_synced
+            sync_success = ensure_job_synced(job.id, description, role)
+            if sync_success:
+                print(f"SUCCESS: Job {job.id} update immediately synced to ChromaDB")
+            else:
+                print(f"INFO: Job {job.id} update queued for background sync to ChromaDB")
         
         flash('Job updated successfully!', 'success')
         return redirect(f'/edit_job/{job_id}')
@@ -502,13 +480,14 @@ def apply_to_job(job_id):
         db.session.add(new_application)
         db.session.commit()
         
-        if MATCHING_ENABLED and resume_text:
-            try:
-                matching_service = get_matching_service(current_app.config.get('CHROMA_PATH', 'chroma_storage'))
-                matching_service.add_resume_to_db(user_id, resume_text)
-                print(f"DEBUG: Resume for user {user_id} added to ChromaDB")
-            except Exception as e:
-                print(f"WARNING: Failed to add resume to ChromaDB: {e}")
+        # Ensure resume is synchronized to ChromaDB with automatic retry
+        if MATCHING_ENABLED and resume_text and resume_text != f"Resume for {user.full_name}":
+            from app.utils.chroma_sync import ensure_resume_synced
+            sync_success = ensure_resume_synced(user_id, resume_text)
+            if sync_success:
+                print(f"SUCCESS: Resume for user {user_id} immediately synced to ChromaDB")
+            else:
+                print(f"INFO: Resume for user {user_id} queued for background sync to ChromaDB")
         
         return jsonify({'success': True, 'message': 'Application submitted successfully'})
         
