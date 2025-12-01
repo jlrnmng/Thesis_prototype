@@ -54,12 +54,24 @@ def add_job():
         db.session.add(new_job)
         db.session.commit()
         
-        # Save to ChromaDB
-        jobs_collection.add(
-            ids=[str(new_job.id)],
-            embeddings=job_vector.tolist(),
-            metadatas=[{"role": role, "cluster_id": cluster_id}]
-        )
+        # Ensure job is synchronized to ChromaDB with automatic retry
+        try:
+            # Use the old method first for immediate embedding storage
+            jobs_collection.add(
+                ids=[str(new_job.id)],
+                embeddings=job_vector.tolist(),
+                metadatas=[{"role": role, "cluster_id": cluster_id}]
+            )
+            print(f"SUCCESS: Job {new_job.id} immediately added to ChromaDB via jobs_collection")
+        except Exception as e:
+            print(f"WARNING: Failed to add job to ChromaDB via jobs_collection: {e}")
+            # Fall back to the robust sync mechanism
+            from app.utils.chroma_sync import ensure_job_synced
+            sync_success = ensure_job_synced(new_job.id, description, role)
+            if sync_success:
+                print(f"SUCCESS: Job {new_job.id} synced via backup method")
+            else:
+                print(f"INFO: Job {new_job.id} queued for background sync")
         
         return jsonify({
             'message': 'Job added successfully',

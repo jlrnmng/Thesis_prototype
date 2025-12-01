@@ -150,8 +150,20 @@ def create_app():
         except Exception as _tele_err:
             logger.debug('Warning: could not patch chromadb telemetry: %s', _tele_err)
 
-        chroma_client = chromadb.PersistentClient(path=chroma_path)
-        jobs_collection = chroma_client.get_or_create_collection(name="jobs")
+        # Create embedding function to avoid warnings
+        from chromadb.utils import embedding_functions
+        embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
+            model_name="all-MiniLM-L6-v2"
+        )
+
+        chroma_client = chromadb.Client(settings=chromadb.config.Settings(
+            chroma_db_impl='duckdb+parquet',
+            persist_directory=chroma_path
+        ))
+        jobs_collection = chroma_client.get_or_create_collection(
+            name="jobs", 
+            embedding_function=embedding_fn
+        )
         app.config['CHROMA_PATH'] = chroma_path
         init_ok = True
 
@@ -171,8 +183,14 @@ def create_app():
                         shutil.copy2(sqlite_file, backup)
                         os.remove(sqlite_file)
                         print(f"Backed up to: {backup}")
-                        chroma_client = chromadb.PersistentClient(path=chroma_path)
-                        jobs_collection = chroma_client.get_or_create_collection(name="jobs")
+                        chroma_client = chromadb.Client(settings=chromadb.config.Settings(
+                            chroma_db_impl='duckdb+parquet',
+                            persist_directory=chroma_path
+                        ))
+                        jobs_collection = chroma_client.get_or_create_collection(
+                            name="jobs", 
+                            embedding_function=embedding_fn
+                        )
                         print("ChromaDB reset and reinitialized successfully.")
                 else:
                     print("Set CHROMA_AUTO_RESET=1 to auto-reset.")
@@ -240,6 +258,25 @@ def create_app():
 
     try:
         _run_db_health_checks(app)
+        
+        # Schedule initial sync check after a short delay
+        def delayed_sync_check():
+            import threading
+            import time
+            def check_sync():
+                time.sleep(5)  # Wait 5 seconds for app to fully initialize
+                try:
+                    with app.app_context():
+                        from app.utils.chroma_sync import schedule_sync_check
+                        schedule_sync_check()
+                except Exception as e:
+                    logger.debug(f'Initial sync check failed: {e}')
+            
+            thread = threading.Thread(target=check_sync, daemon=True)
+            thread.start()
+        
+        delayed_sync_check()
+        
     except Exception:
         pass
     
