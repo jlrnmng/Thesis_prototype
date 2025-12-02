@@ -16,11 +16,50 @@ class ResumeTextPreprocessor:
     """
     
     def __init__(self):
-        # Common stop words that don't add value to matching but preserve important keywords
+        # Comprehensive stop words optimized for resume/job matching
+        # These words don't add semantic value but we preserve technical terms
         self.stop_words = {
-            'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from',
-            'has', 'he', 'in', 'is', 'it', 'its', 'of', 'on', 'that', 'the',
-            'to', 'was', 'were', 'will', 'with'
+            # Articles
+            'a', 'an', 'the',
+            
+            # Pronouns
+            'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves',
+            'you', 'your', 'yours', 'yourself', 'yourselves',
+            'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself',
+            'it', 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves',
+            'what', 'which', 'who', 'whom', 'this', 'that', 'these', 'those',
+            
+            # Conjunctions
+            'and', 'but', 'or', 'nor', 'so', 'yet',
+            
+            # Prepositions
+            'about', 'above', 'across', 'after', 'against', 'along', 'among',
+            'around', 'as', 'at', 'before', 'behind', 'below', 'beneath',
+            'beside', 'between', 'beyond', 'by', 'down', 'during', 'except',
+            'for', 'from', 'in', 'inside', 'into', 'near', 'of', 'off', 'on',
+            'onto', 'out', 'outside', 'over', 'through', 'throughout', 'to',
+            'toward', 'under', 'underneath', 'until', 'up', 'upon', 'with',
+            'within', 'without',
+            
+            # Common verbs (be careful - some may be meaningful)
+            'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+            'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing',
+            'will', 'would', 'shall', 'can', 'could', 'may', 'might',
+            
+            # Common adjectives/adverbs that don't add value
+            'very', 'more', 'most', 'such', 'no', 'not', 'only', 'just',
+            'too', 'also', 'than', 'then', 'there', 'here', 'when', 'where',
+            'why', 'how', 'all', 'each', 'every', 'both', 'few', 'some',
+            'any', 'many', 'much', 'other', 'another', 'same', 'own',
+            
+            # Common connecting words
+            'if', 'because', 'while', 'since', 'though', 'although',
+            'unless', 'whether', 'nor',
+            
+            # Other common words with low semantic value
+            'get', 'got', 'make', 'made', 'now', 'way', 'even', 'well',
+            'back', 'still', 'go', 'see', 'seem', 'come', 'came', 'take',
+            'took', 'know', 'knew', 'think', 'thought', 'say', 'said'
         }
         
         # Skills and technical terms that should be preserved exactly
