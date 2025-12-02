@@ -525,6 +525,7 @@ def profile():
 
 
 @main_bp.route('/update_profile', methods=['POST'])
+@secure_route
 def update_profile():
     """Update user profile information"""
     user_id = session.get('user_id')
@@ -540,6 +541,10 @@ def update_profile():
     session['last_activity'] = datetime.utcnow().isoformat()
     
     try:
+        print(f"DEBUG: Updating profile for user {user_id}")
+        print(f"DEBUG: Form data: {dict(request.form)}")
+        print(f"DEBUG: Files: {dict(request.files)}")
+        
         # Update personal information
         user.first_name = request.form.get('first_name', '').strip()
         user.last_name = request.form.get('last_name', '').strip()
@@ -560,28 +565,53 @@ def update_profile():
         # Handle resume upload if provided
         if 'resume' in request.files:
             resume_file = request.files['resume']
+            print(f"DEBUG: Resume file object: {resume_file}")
+            print(f"DEBUG: Resume filename: {resume_file.filename if resume_file else 'None'}")
+            
             if resume_file and resume_file.filename:
+                print(f"DEBUG: Processing resume file: {resume_file.filename}")
+                
                 if resume_file.filename.lower().endswith('.pdf'):
                     # Generate secure filename
                     import time
                     timestamp = str(int(time.time()))
                     filename = f"{user.first_name}_{user.last_name}_Resume_{timestamp}.pdf"
                     
-                    # Save file
-                    upload_path = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'uploads'), filename)
-                    resume_file.save(upload_path)
+                    # Get upload folder and ensure it exists
+                    upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+                    if not os.path.exists(upload_folder):
+                        print(f"DEBUG: Creating upload folder: {upload_folder}")
+                        os.makedirs(upload_folder, exist_ok=True)
                     
-                    # Delete old resume if exists
-                    if user.resume:
-                        old_resume_path = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'uploads'), user.resume)
-                        if os.path.exists(old_resume_path):
-                            os.remove(old_resume_path)
+                    upload_path = os.path.join(upload_folder, filename)
                     
-                    user.resume = filename
+                    print(f"DEBUG: Saving resume to: {upload_path}")
+                    try:
+                        resume_file.save(upload_path)
+                        print(f"DEBUG: Resume saved successfully")
+                        
+                        # Delete old resume if exists
+                        if user.resume:
+                            old_resume_path = os.path.join(upload_folder, user.resume)
+                            if os.path.exists(old_resume_path):
+                                os.remove(old_resume_path)
+                                print(f"DEBUG: Deleted old resume: {user.resume}")
+                        
+                        user.resume = filename
+                        print(f"DEBUG: Updated user.resume to: {filename}")
+                    except Exception as save_error:
+                        print(f"ERROR: Failed to save resume file: {save_error}")
+                        import traceback
+                        traceback.print_exc()
+                        return jsonify({'success': False, 'error': f'Failed to save resume file: {str(save_error)}'}), 500
                 else:
+                    print(f"DEBUG: Invalid file type: {resume_file.filename}")
                     return jsonify({'success': False, 'error': 'Only PDF files are allowed for resume'}), 400
+            else:
+                print("DEBUG: No resume file selected or empty filename")
         
         db.session.commit()
+        print(f"DEBUG: Database committed successfully")
         
         # Log security event
         log_security_event(
@@ -590,12 +620,15 @@ def update_profile():
             details=f"User {user.email} updated profile information"
         )
         
+        print(f"DEBUG: Profile update successful for user {user_id}")
         return jsonify({'success': True, 'message': 'Profile updated successfully'})
         
     except Exception as e:
         db.session.rollback()
         print(f"ERROR: Failed to update profile: {e}")
-        return jsonify({'success': False, 'error': 'Failed to update profile'}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': f'Failed to update profile: {str(e)}'}), 500
 
 
 @main_bp.route('/download_resume/<int:user_id>')

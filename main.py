@@ -1,8 +1,12 @@
 import os
 import sys
 import sqlite3
+import logging
 from sqlalchemy import text
 from flask import render_template, request, session, redirect, flash, url_for, make_response, send_file
+
+# Reduce ChromaDB informational messages
+logging.getLogger('chromadb').setLevel(logging.WARNING)
 from app import create_app, db
 from app.utils.security import secure_route, session_security_check, log_security_event, check_session_timeout, invalidate_session
 

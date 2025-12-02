@@ -601,7 +601,12 @@
             // Don't prevent default - let the browser navigate normally
         });
 
-        // File upload handling
+        // File upload handling - make custom button trigger file input
+        document.querySelector('.file-upload-button').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('resume').click();
+        });
+        
         document.getElementById('resume').addEventListener('change', function(e) {
             const fileName = e.target.files[0]?.name;
             const buttonText = document.getElementById('fileButtonText');
@@ -638,6 +643,12 @@
             // Create FormData object
             const formData = new FormData(document.getElementById('profileForm'));
             
+            // Debug: Log form data
+            console.log('Form submission started');
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ': ' + (pair[1] instanceof File ? pair[1].name : pair[1]));
+            }
+            
             // Send request
             fetch('/update_profile', {
                 method: 'POST',
@@ -645,6 +656,7 @@
                 credentials: 'same-origin'
             })
             .then(response => {
+                console.log('Response status:', response.status);
                 if (response.status === 401) {
                     // Session expired
                     showAlert('danger', '❌ Session expired. Please log in again.');
@@ -656,6 +668,7 @@
                 return response.json();
             })
             .then(data => {
+                console.log('Response data:', data);
                 if (data && data.success) {
                     showAlert('success', '✅ Profile updated successfully!');
                     // Refresh page after 1.5 seconds to show updated info

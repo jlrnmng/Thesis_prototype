@@ -16,6 +16,7 @@ This formula is used identically for:
 3. Matchmaking explanations
 """
 import warnings
+import logging
 import chromadb
 from chromadb.utils import embedding_functions
 from sentence_transformers import SentenceTransformer
@@ -25,9 +26,11 @@ import numpy as np
 import os
 from typing import List, Tuple, Dict
 
-# Suppress ChromaDB warnings
+# Suppress ChromaDB warnings and informational messages
 warnings.filterwarnings('ignore', category=UserWarning)
 warnings.filterwarnings('ignore', message='.*PersistentClient.*')
+logging.getLogger('chromadb').setLevel(logging.ERROR)
+logging.getLogger('chromadb.telemetry').setLevel(logging.ERROR)
 
 class MatchingService:
     def __init__(self, chroma_path='chroma_storage'):
