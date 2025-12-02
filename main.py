@@ -137,6 +137,8 @@ def register_admin():
             last_name='Admin',
             email=email,
             address=company_address,
+            company_name=company_name,
+            company_address=company_address,
             is_admin=True
         )
         new_admin.set_password(password)
@@ -639,11 +641,14 @@ def get_job_matches():
         for job_id, score in job_rankings:
             job = Job.query.get(job_id)
             if job:
+                # Use company name if available, otherwise use creator's full name
+                company_display = job.creator.company_name if job.creator and job.creator.company_name else (job.creator.full_name if job.creator else None)
                 results.append({
                     'job_id': job.id,
                     'role': job.role,
                     'match_score': round(score, 2),
                     'cluster_id': job.cluster_id,
+                    'company_name': company_display,
                     'description_preview': job.description[:150] + '...' if len(job.description) > 150 else job.description
                 })
         

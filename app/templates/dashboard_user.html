@@ -331,14 +331,18 @@
              data-id="{{ job.id }}"
              data-title="{{ job.role }}"
              data-description="{{ job.description }}"
+             data-company="{{ job.creator.company_name if job.creator and job.creator.company_name else (job.creator.full_name if job.creator else 'Company') }}"
              data-match="{{ job.match_score if job.match_score else 0 }}"
-             onclick="showJobDetails(this.dataset.id, this.dataset.title, this.dataset.description, this.dataset.match)">
+             onclick="showJobDetails(this.dataset.id, this.dataset.title, this.dataset.description, this.dataset.match, this.dataset.company)">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
             <h3 style="margin: 0;">{{ job.role }}</h3>
             {% if job.match_score and job.match_score > 0 %}
             <span class="match-badge">{{ job.match_score|int }} Score</span>
             {% endif %}
           </div>
+          {% if job.creator %}
+          <p style="margin: 0 0 8px 0; color: #2eccb0; font-weight: 600; font-size: 14px;">🏢 {{ job.creator.company_name if job.creator.company_name else job.creator.full_name }}</p>
+          {% endif %}
           <p>{{ job.description[:80] }}...</p>
         </div>
         {% endfor %}
@@ -399,13 +403,20 @@
           jobCard.setAttribute('data-title', job.role);
           jobCard.setAttribute('data-description', job.description_preview);
           jobCard.setAttribute('data-match', job.match_score);
-          jobCard.onclick = () => showJobDetails(job.job_id, job.role, job.description_preview, job.match_score);
+          jobCard.setAttribute('data-company', job.company_name || 'Company');
+          jobCard.onclick = () => showJobDetails(job.job_id, job.role, job.description_preview, job.match_score, job.company_name);
+          
+          let companyHTML = '';
+          if (job.company_name) {
+            companyHTML = `<p style="margin: 0 0 8px 0; color: #2eccb0; font-weight: 600; font-size: 14px;">🏢 ${job.company_name}</p>`;
+          }
           
           jobCard.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
               <h3 style="margin: 0;">${job.role}</h3>
               <span class="match-badge">${job.match_score.toFixed(1)} Score</span>
             </div>
+            ${companyHTML}
             <p>${job.description_preview}...</p>
           `;
           
@@ -476,7 +487,7 @@
       `;
     }
 
-    function showJobDetails(jobId, title, description, matchScore) {
+    function showJobDetails(jobId, title, description, matchScore, companyName) {
       // Remove selected class from all job cards
       document.querySelectorAll('.job-card').forEach(card => {
         card.classList.remove('selected');
@@ -489,6 +500,20 @@
       const sections = parseJobDescription(description);
       
       const details = document.getElementById("jobDetails");
+      
+      // Company name display
+      let companyHTML = '';
+      if (companyName && companyName !== 'Company') {
+        companyHTML = `
+          <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-left: 4px solid #2eccb0;">
+            <span style="font-size: 20px;">🏢</span>
+            <div>
+              <div style="font-size: 12px; color: #666; margin-bottom: 2px;">Company</div>
+              <div style="font-weight: 600; color: #2c3e50;">${companyName}</div>
+            </div>
+          </div>
+        `;
+      }
       
       let matchScoreHTML = '';
       if (matchScore && matchScore > 0) {
@@ -513,6 +538,8 @@
           <span style="font-size: 24px;">💼</span>
           ${title}
         </h2>
+        
+        ${companyHTML}
         
         ${sections.overview ? `
           <div style="background: #f8f9fa; border-radius: 8px; padding: 18px; margin-bottom: 20px;">

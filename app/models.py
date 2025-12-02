@@ -31,6 +31,10 @@ class User(db.Model):
     # 👑 Role
     is_admin = db.Column(db.Boolean, default=False)
 
+    # 🏢 Company info (for admins)
+    company_name = db.Column(db.String(200))
+    company_address = db.Column(db.Text)
+
     # 🕐 Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -62,6 +66,8 @@ class User(db.Model):
             "address": self.address,
             "resume": self.resume,
             "is_admin": self.is_admin,
+            "company_name": self.company_name,
+            "company_address": self.company_address,
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
 
@@ -109,6 +115,7 @@ class Job(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "created_by": self.created_by,
             "creator_name": self.creator.full_name if self.creator else None,
+            "company_name": self.creator.company_name if self.creator else None,
             "application_count": len(self.applications)
         }
 
