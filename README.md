@@ -1,6 +1,31 @@
-# Hirely - AI-Powered Job Matching System
+# Hirely - AI-Powered Job Matching System 🎯
 
-Hirely is an intelligent recruitment platform that uses natural language processing and machine learning to match job seekers with relevant opportunities. The system provides multi-admin support, enterprise-level security, and AI-powered candidate ranking.
+Hirely is an intelligent recruitment platform that uses **Natural Language Processing (NLP)** and **Machine Learning** to match job seekers with relevant opportunities. The system provides multi-admin support, enterprise-level security, AI-powered candidate ranking, and comprehensive text preprocessing with stop word removal.
+
+## ✨ Key Features
+
+### For Job Seekers
+- 📄 **Resume Upload** - Upload PDF resumes with automatic text extraction
+- 🎯 **AI-Powered Matching** - Get personalized job recommendations with match scores
+- 📊 **Match Score Transparency** - See why jobs match your profile (BM25 + Cosine Similarity)
+- ⚡ **One-Click Apply** - Apply to jobs instantly
+- 👤 **Profile Management** - Update resume and personal information anytime
+
+### For Employers/Admins
+- 📝 **Job Posting** - Create detailed job descriptions with requirements
+- 🏢 **Company Branding** - Display company name and information on job posts
+- 👥 **Applicant Management** - View ranked applicants with match scores
+- 📥 **Resume Access** - Download and review applicant resumes
+- 🔐 **Multi-Admin Support** - Each admin manages only their own job posts
+- ✏️ **Job Management** - Edit or deactivate job postings
+
+### Technical Features
+- 🧠 **Advanced NLP** - Text preprocessing with 177 stop words removal
+- 🔍 **Hybrid Matching** - BM25 ranking + Cosine similarity for accuracy
+- 💾 **Vector Database** - ChromaDB for semantic search and embeddings
+- 🔒 **Enterprise Security** - Session management, CSRF protection, secure routes
+- ⚡ **Real-time Sync** - Automatic synchronization between SQLite and ChromaDB
+- 📦 **Scalable Architecture** - Modular design with blueprints and utilities
 
 ## 🚀 Quick Start
 
@@ -56,31 +81,64 @@ Hirely/
 │   │   └── shortlist.py        # Candidate shortlisting routes
 │   ├── static/                 # Static assets (CSS, JS, images)
 │   ├── templates/              # Jinja2 HTML templates
+│   ├── uploads/                # User uploaded resumes (PDFs)
 │   └── utils/                  # Utility modules
-│       ├── decorators.py       # Route decorators
-│       ├── pdf_processor.py    # PDF handling utilities
-│       ├── resume_extractor.py # Resume text extraction
-│       ├── text_preprocessing.py # NLP preprocessing pipeline
-│       └── security.py         # Security utilities and decorators
+│       ├── decorators.py       # Route decorators (@secure_route)
+│       ├── pdf_processor.py    # PDF text extraction
+│       ├── resume_extractor.py # Resume parsing utilities
+│       ├── text_preprocessing.py # NLP preprocessing (177 stop words)
+│       ├── security.py         # Security utilities and session management
+│       ├── chroma_sync.py      # ChromaDB synchronization
+│       └── sync_scheduler.py   # Background sync scheduler
+├── archive/                    # Archived/deprecated files
 ├── chroma_storage/             # ChromaDB vector database storage
 ├── data/                       # ML models and data files
+├── docs/                       # Project documentation
 ├── instance/                   # Instance-specific configuration
+│   ├── config.py              # App configuration
+│   └── resume_matcher.db      # SQLite database
 ├── scripts/                    # Development and maintenance scripts
 │   ├── migrations/             # Database migration scripts
+│   │   ├── add_company_fields.py      # Add company info to users
+│   │   ├── update_admin_companies.py  # Populate company names
+│   │   └── migrate_resume_preprocessing.py # Update preprocessing
 │   ├── init_database.py        # Database initialization
 │   ├── init_chroma.py          # ChromaDB setup
 │   ├── create_test_jobs.py     # Test data creation
-│   └── [other utilities]       # Various development tools
+│   ├── manage_chroma_db.py     # ChromaDB management
+│   ├── sync_chroma_db.py       # Sync databases
+│   ├── test_new_preprocessing.py # Test preprocessing on resumes
+│   └── [20+ utility scripts]   # See scripts/README.md
 ├── tests/                      # Comprehensive test suite
-│   ├── test_cache_prevention.py # Browser security tests
+│   ├── test_cache_prevention.py     # Browser security tests
+│   ├── test_session_security.py     # Session management tests
+│   ├── test_multi_admin.py          # Multi-admin functionality
+│   ├── test_profile.py              # Profile feature tests
+│   ├── test_preprocessing_*.py      # Preprocessing tests (3 files)
+│   └── test_functionality.py        # General functionality tests
 │   ├── test_multi_admin.py      # Admin isolation tests
 │   └── test_session_security.py # Session management tests
-├── uploads/                    # User uploaded files (resumes, etc.)
+├── uploads/                    # User uploaded resume files
+├── venv/                       # Python virtual environment
 ├── matching_service.py         # AI matching service core
 ├── resume_extractor.py         # Resume text extraction utilities
 ├── main.py                     # Application entry point
-└── requirements.txt           # Python dependencies
+├── requirements.txt            # Python dependencies
+└── README.md                   # This file
 ```
+
+**📖 Each directory contains its own README.md with detailed documentation:**
+- [`app/README.md`](app/README.md) - Application structure and features
+- [`app/routes/README.md`](app/routes/README.md) - All route endpoints
+- [`app/utils/README.md`](app/utils/README.md) - Utility modules and helpers
+- [`scripts/README.md`](scripts/README.md) - All scripts and migrations
+- [`tests/README.md`](tests/README.md) - Test files and coverage
+- [`archive/README.md`](archive/README.md) - Deprecated files
+- [`chroma_storage/README.md`](chroma_storage/README.md) - Vector database
+- [`instance/README.md`](instance/README.md) - Configuration and database
+- [`uploads/README.md`](uploads/README.md) - Resume file storage
+- [`data/README.md`](data/README.md) - ML models and datasets
+- [`docs/README.md`](docs/README.md) - Project documentation
 
 ## ✨ Key Features
 

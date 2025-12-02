@@ -16,6 +16,12 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+.pytest_cache/
+
+# Coverage reports
+.coverage
+htmlcov/
+*.cover
 
 # Environment variables
 .env
@@ -87,3 +93,13 @@ htmlcov/
 
 # Documentation build
 docs/_build/
+
+# Temporary test files (keep test scripts, ignore generated output)
+tests/output/
+tests/tmp/
+*.test.txt
+
+# Backup files
+*.bak
+*.backup
+*~
