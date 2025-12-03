@@ -33,9 +33,14 @@ logging.getLogger('chromadb').setLevel(logging.ERROR)
 logging.getLogger('chromadb.telemetry').setLevel(logging.ERROR)
 
 class MatchingService:
-    def __init__(self, chroma_path='chroma_storage'):
-        """Initialize matching service"""
+    def __init__(self, chroma_path=None):
+        # Initialize AI matching service with vector database
+        # Default to absolute path in Hirely/chroma_storage to avoid duplicate folders
+        if chroma_path is None:
+            chroma_path = os.path.join(os.path.dirname(__file__), 'chroma_storage')
+        
         self.chroma_path = chroma_path
+        # Load sentence transformer model for semantic embeddings
         self.model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
         
         try:
@@ -59,10 +64,12 @@ class MatchingService:
                 # Use in-memory client as final fallback
                 self.client = chromadb.Client()
         
+        # Set up sentence transformer embedding function
         self.embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
             model_name="all-MiniLM-L6-v2"
         )
         
+        # Get or create resumes collection (for candidate resumes)
         try:
             self.resumes_collection = self.client.get_collection(
                 name="resumes",
@@ -74,6 +81,7 @@ class MatchingService:
                 embedding_function=self.embedding_function
             )
         
+        # Get or create jobs collection (for job descriptions)
         try:
             self.jobs_collection = self.client.get_collection(
                 name="jobs",
@@ -86,19 +94,18 @@ class MatchingService:
             )
     
     def predict_resume_cluster(self, resume_text: str) -> int:
-        """
-        Predict which cluster a resume belongs to using the same K-means model used for jobs.
-        This creates a bridge between resume content and job categories.
-        """
+        # Predict which job category cluster a resume belongs to using K-means
+        # This bridges resume content to job categories for better matching
         try:
             # Import here to avoid circular imports
             from app import model, kmeans_model
             
+            # Check if models are loaded
             if not model or not kmeans_model:
                 print("Warning: Models not loaded, returning default cluster")
                 return 0
             
-            # Preprocess resume text for better clustering
+            # Preprocess resume text for better clustering accuracy
             processed_text = self._preprocess_for_matching(resume_text)
             
             # Vectorize using same SBERT model as jobs
@@ -114,11 +121,12 @@ class MatchingService:
             return 0  # Default cluster
     
     def add_resume_to_db(self, user_id: int, resume_text: str):
-        """Add resume to ChromaDB with cluster prediction"""
+        # Add resume to vector database with cluster prediction
         try:
-            # Predict resume cluster
+            # Predict which job category cluster this resume belongs to
             predicted_cluster = self.predict_resume_cluster(resume_text)
             
+            # Store resume in ChromaDB with metadata (upsert = update or insert)
             self.resumes_collection.upsert(
                 documents=[resume_text],
                 ids=[f"user_{user_id}"],
@@ -138,6 +146,7 @@ class MatchingService:
             else:
                 print(f"Error adding resume to ChromaDB (first attempt): {err_str}")
             try:
+                # Disable telemetry and retry
                 import os
                 os.environ.setdefault('CHROMA_DISABLE_TELEMETRY', '1')
                 # Recreate client and collections with telemetry disabled and retry
@@ -174,9 +183,11 @@ class MatchingService:
                 return False, 0
     
     def add_job_to_db(self, job_id: int, job_description: str, job_role: str):
-        """Add job to ChromaDB"""
+        # Add job posting to vector database for AI matching
         try:
+            # Combine role and description for better semantic search
             full_text = f"{job_role} {job_description}"
+            # Store in ChromaDB (upsert = update or insert)
             self.jobs_collection.upsert(
                 documents=[full_text],
                 ids=[f"job_{job_id}"],
@@ -189,46 +200,43 @@ class MatchingService:
     
     def rank_applicants_for_job(self, job_description: str, job_role: str, 
                                 applications: List) -> List[Tuple[int, float]]:
-        """
-        Rank applicants using the EXACT hybrid scoring formula.
-        Formula: Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
-        This ensures consistency with the shortlisting algorithm.
-        """
+        # Rank applicants for a job using hybrid scoring (70% semantic + 30% keyword)
+        # Formula: Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
         if not applications:
             return []
         
+        # Combine role and description for matching
         job_query = f"{job_role} {job_description}"
         resume_texts = [app.resume_text for app in applications]
         app_ids = [app.id for app in applications]
         
-        # Get cosine similarity scores (already 0-1 range)
+        # Get cosine similarity scores (semantic understanding, already 0-1 range)
         cosine_scores = self._get_cosine_similarity_scores(job_query, resume_texts)
         
-        # Get BM25 scores and normalize them to 0-1 range
+        # Get BM25 scores (keyword matching) and normalize to 0-1 range
         bm25_scores = self._get_bm25_scores(job_query, resume_texts)
         bm25_scores_normalized = self._normalize_scores(bm25_scores)
         
-        # Apply the EXACT same formula as shortlisting:
-        # Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
+        # Apply hybrid scoring formula: 70% semantic + 30% keyword
         final_scores = [
             (cos * 70) + (bm25_norm * 30)
             for cos, bm25_norm in zip(cosine_scores, bm25_scores_normalized)
         ]
         
+        # Create rankings and sort by score (highest first)
         rankings = list(zip(app_ids, final_scores))
         rankings.sort(key=lambda x: x[1], reverse=True)
         
         return rankings
     
     def _preprocess_for_matching(self, text: str) -> str:
-        """
-        Preprocess text for optimal matching performance.
-        Applies NLP preprocessing if available, falls back to basic cleaning.
-        """
+        # Preprocess text for optimal matching (NLP cleaning)
+        # Uses advanced preprocessing if available, falls back to basic cleaning
         if not text:
             return ""
         
         try:
+            # Try to use advanced NLP preprocessing
             from app.utils.text_preprocessing import preprocess_resume_text
             return preprocess_resume_text(text, for_matching=True)
         except ImportError:
@@ -239,34 +247,35 @@ class MatchingService:
             return text.lower().strip()
     
     def _get_cosine_similarity_scores(self, query: str, documents: List[str]) -> List[float]:
-        """Get cosine similarity scores with preprocessing"""
+        # Calculate semantic similarity scores using sentence embeddings (0-1 range)
         try:
-            # Preprocess query and documents for better matching
+            # Preprocess query and documents for better matching accuracy
             processed_query = self._preprocess_for_matching(query)
             processed_docs = [self._preprocess_for_matching(doc) for doc in documents]
             
+            # Generate embeddings using sentence transformer model
             query_embedding = self.model.encode([processed_query])
             doc_embeddings = self.model.encode(processed_docs)
+            
+            # Calculate cosine similarity between query and each document
             similarities = cosine_similarity(query_embedding, doc_embeddings)[0]
             return similarities.tolist()
         except Exception as e:
             print(f"Error getting cosine similarity scores: {e}")
+            # Return neutral scores on error
             return [0.5] * len(documents)
     
     def _get_bm25_scores(self, query: str, documents: List[str]) -> List[float]:
-        """
-        Get BM25 scores with proper corpus handling.
-        BM25 requires multiple documents in corpus to work correctly.
-        """
+        # Calculate keyword matching scores using BM25 algorithm
+        # BM25 requires multiple documents in corpus to work correctly
         try:
             # Preprocess query and documents for better tokenization
             processed_query = self._preprocess_for_matching(query)
             processed_docs = [self._preprocess_for_matching(doc) for doc in documents]
             
-            # If we only have one document, we need to create a pseudo-corpus
-            # to make BM25 work properly (avoid negative IDF issues)
+            # Handle single document case - create pseudo-corpus to avoid negative IDF
             if len(processed_docs) == 1:
-                # Create a diverse pseudo-corpus to establish proper IDF baselines
+                # Create diverse pseudo-corpus to establish proper IDF baselines
                 pseudo_docs = [
                     "software engineer developer programming coding computer science technology",
                     "management business marketing sales finance accounting administration",
@@ -282,11 +291,11 @@ class MatchingService:
                 full_corpus = processed_docs
                 target_indices = list(range(len(processed_docs)))
             
-            # Tokenize corpus and query
+            # Tokenize corpus and query (split into words)
             tokenized_corpus = [doc.split() for doc in full_corpus]
             tokenized_query = processed_query.split()
             
-            # Calculate BM25 scores
+            # Calculate BM25 scores (keyword relevance)
             bm25 = BM25Okapi(tokenized_corpus)
             all_scores = bm25.get_scores(tokenized_query)
             
@@ -300,10 +309,7 @@ class MatchingService:
             return [0] * len(documents)
     
     def _normalize_scores(self, scores: List[float]) -> List[float]:
-        """
-        Normalize scores to 0-1 range with improved handling for BM25.
-        Now that BM25 gives positive scores, we can use better normalization.
-        """
+        # Normalize BM25 scores to 0-1 range for hybrid scoring
         if not scores:
             return []
         
@@ -311,7 +317,7 @@ class MatchingService:
         if len(scores) == 1:
             score = scores[0]
             # BM25 with pseudo-corpus typically ranges from 0 to ~15
-            # Normalize using a reasonable scale
+            # Normalize using a reasonable scale for relevance levels
             if score <= 0:
                 return [0.0]  # No relevance
             elif score <= 2:
@@ -331,52 +337,50 @@ class MatchingService:
         if max_score == min_score:
             return [0.5] * len(scores)
         
+        # Normalize to 0-1 range: (score - min) / (max - min)
         normalized = [(s - min_score) / (max_score - min_score) for s in scores]
         return normalized
     
     def get_top_jobs_for_resume(self, resume_text: str, all_jobs: List, 
                                 top_n: int = 3) -> List[Tuple[int, float]]:
-        """
-        Get top job matches for resume using automatic K-means classification.
-        
-        Args:
-            resume_text: Resume content for matching
-            all_jobs: List of job objects to match against
-            top_n: Number of top matches to return
-        
-        Formula: Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
-        """
+        # Get top job matches for a resume using hybrid AI scoring
+        # Formula: Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
         if not all_jobs:
             return []
         
+        # Combine role and description for each job
         job_texts = [f"{job.role} {job.description}" for job in all_jobs]
         job_ids = [job.id for job in all_jobs]
         
-        # Get cosine similarity scores (already 0-1 range)
+        # Get cosine similarity scores (semantic understanding, already 0-1 range)
         cosine_scores = self._get_cosine_similarity_scores(resume_text, job_texts)
         
-        # Get BM25 scores and normalize them to 0-1 range
+        # Get BM25 scores (keyword matching) and normalize to 0-1 range
         bm25_scores = self._get_bm25_scores(resume_text, job_texts)
         bm25_scores_normalized = self._normalize_scores(bm25_scores)
         
-        # Apply the standard hybrid scoring formula:
-        # Final Score = (Cosine Similarity × 70) + (BM25 Score × 30)
+        # Apply hybrid scoring formula: 70% semantic + 30% keyword
         final_scores = [
             (cos * 70) + (bm25_norm * 30)
             for cos, bm25_norm in zip(cosine_scores, bm25_scores_normalized)
         ]
         
+        # Create rankings and sort by score (highest first)
         rankings = list(zip(job_ids, final_scores))
         rankings.sort(key=lambda x: x[1], reverse=True)
         
+        # Return top N matches
         return rankings[:top_n]
 
 
 _matching_service = None
 
-def get_matching_service(chroma_path='chroma_storage') -> MatchingService:
-    """Get or create singleton"""
+def get_matching_service(chroma_path=None) -> MatchingService:
+    # Get or create singleton matching service instance
     global _matching_service
     if _matching_service is None:
+        # Default to absolute path in Hirely/chroma_storage
+        if chroma_path is None:
+            chroma_path = os.path.join(os.path.dirname(__file__), 'chroma_storage')
         _matching_service = MatchingService(chroma_path)
     return _matching_service

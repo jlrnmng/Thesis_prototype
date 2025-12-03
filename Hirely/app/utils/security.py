@@ -9,13 +9,12 @@ import functools
 SESSION_TIMEOUT_MINUTES = 60  # Increased from 30 to 60 minutes
 
 def check_session_timeout():
-    """
-    Check if the current session has timed out
-    Returns True if session is valid, False if timed out
-    """
+    # Check if user's session has timed out (60 minute timeout)
+    # Returns True if session is still valid, False if timed out
     if 'user_id' not in session:
         return False
     
+    # Get last activity timestamp from session
     last_activity = session.get('last_activity')
     if not last_activity:
         # No last activity recorded, set it now and consider session valid
@@ -23,12 +22,14 @@ def check_session_timeout():
         return True
     
     try:
+        # Parse last activity timestamp
         last_activity_time = datetime.fromisoformat(last_activity)
         current_time = datetime.utcnow()
         
-        # Check if session has timed out
+        # Calculate time since last activity
         time_diff = current_time - last_activity_time
         if time_diff > timedelta(minutes=SESSION_TIMEOUT_MINUTES):
+            # Session has timed out
             print(f"Session timeout: {time_diff.total_seconds()/60:.1f} minutes since last activity")
             return False
         
@@ -47,13 +48,11 @@ def check_session_timeout():
         return True
 
 def invalidate_session():
-    """
-    Completely invalidate the current session
-    """
+    # Completely invalidate the current session (logout)
     user_id = session.get('user_id')
     is_admin = session.get('is_admin')
     
-    # Log session invalidation
+    # Log session invalidation for security audit
     if user_id:
         user_type = "Admin" if is_admin else "User"
         print(f"SECURITY LOG: Session invalidated for {user_type} ID {user_id}")
@@ -63,21 +62,19 @@ def invalidate_session():
     session.permanent = False
 
 def no_cache(f):
-    """
-    Decorator to prevent browser caching of protected pages
-    This prevents users from accessing protected content via browser back button after logout
-    """
+    # Decorator to prevent browser caching of protected pages
+    # Prevents users from accessing protected content via back button after logout
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):
         response = make_response(f(*args, **kwargs))
         
-        # Add headers to prevent caching
+        # Add headers to prevent browser caching
         response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, private'
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '0'
         response.headers['Last-Modified'] = datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
         
-        # Additional security headers
+        # Additional security headers to prevent XSS and clickjacking
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['X-XSS-Protection'] = '1; mode=block'
@@ -87,14 +84,13 @@ def no_cache(f):
     return decorated_function
 
 def session_security_check(f):
-    """
-    Decorator to check session timeout and validity
-    """
+    # Decorator to check session timeout and validity before allowing access
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):
         # Check if user is logged in
         if 'user_id' not in session:
-            return f(*args, **kwargs)  # Let the route handle unauthenticated users
+            # Let the route handle unauthenticated users
+            return f(*args, **kwargs)
         
         # Check session timeout but don't automatically invalidate
         # Let the route decide what to do with expired sessions
@@ -107,10 +103,8 @@ def session_security_check(f):
     return decorated_function
 
 def secure_route(f):
-    """
-    Combined decorator for session security and cache prevention
-    Use this on all protected routes that require authentication
-    """
+    # Combined decorator for session security and cache prevention
+    # Use this on all protected routes that require authentication
     @functools.wraps(f)
     @no_cache
     @session_security_check
@@ -120,9 +114,7 @@ def secure_route(f):
     return decorated_function
 
 def log_security_event(event_type, user_id=None, details=None):
-    """
-    Log security-related events for audit purposes
-    """
+    # Log security-related events for audit trail
     timestamp = datetime.utcnow().isoformat()
     user_info = f"User ID {user_id}" if user_id else "Unknown user"
     details_str = f" - {details}" if details else ""
@@ -130,12 +122,11 @@ def log_security_event(event_type, user_id=None, details=None):
     print(f"SECURITY LOG [{timestamp}]: {event_type} - {user_info}{details_str}")
 
 def get_session_info():
-    """
-    Get information about the current session for debugging/monitoring
-    """
+    # Get information about current session for debugging/monitoring
     if 'user_id' not in session:
         return None
     
+    # Calculate time since last activity
     last_activity = session.get('last_activity')
     if last_activity:
         try:
@@ -147,6 +138,7 @@ def get_session_info():
     else:
         minutes_since_activity = None
     
+    # Return session info dictionary
     return {
         'user_id': session.get('user_id'),
         'is_admin': session.get('is_admin'),

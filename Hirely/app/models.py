@@ -8,6 +8,7 @@ from app import db
 from werkzeug.security import generate_password_hash, check_password_hash
 
 class User(db.Model):
+    # Database model for users (both job seekers and admins/employers)
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -17,44 +18,44 @@ class User(db.Model):
     first_name = db.Column(db.String(80), nullable=False)
     middle_name = db.Column(db.String(80))
 
-    # 📧 Contact
+    # 📧 Contact information
     email = db.Column(db.String(120), unique=True, nullable=False)
     phone = db.Column(db.String(30))
     address = db.Column(db.Text)
 
-    # 🔒 Security
+    # 🔒 Security - hashed password
     password_hash = db.Column(db.String(128))
 
-    # 📄 Resume filename
+    # 📄 Resume filename (for job seekers)
     resume = db.Column(db.String(255))
 
-    # 👑 Role
+    # 👑 Role - True for admin/employer, False for job seeker
     is_admin = db.Column(db.Boolean, default=False)
 
-    # 🏢 Company info (for admins)
+    # 🏢 Company info (for admins/employers only)
     company_name = db.Column(db.String(200))
     company_address = db.Column(db.Text)
 
     # 🕐 Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # 🔗 Relationship
+    # 🔗 Relationship - applications submitted by this user
     applications = db.relationship('Application', backref='applicant', lazy=True)
 
     # --- Helpers ---
     def set_password(self, password):
-        """Hash and set password"""
+        # Hash and set password using werkzeug security
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
-        """Check if provided password matches hash"""
+        # Check if provided password matches stored hash
         return check_password_hash(self.password_hash, password)
 
     # ----------------------------
     # Serialization helper
     # ----------------------------
     def to_dict(self):
-        """Convert user object to dictionary for API responses"""
+        # Convert user object to dictionary for API responses
         return {
             "id": self.id,
             "last_name": self.last_name,
@@ -76,10 +77,7 @@ class User(db.Model):
 
     @property
     def full_name(self):
-        """Compose and return the user's full name.
-
-        Format: First Middle Last (middle omitted if not set).
-        """
+        # Compose user's full name: First Middle Last (middle omitted if not set)
         parts = [self.first_name]
         if self.middle_name:
             parts.append(self.middle_name)
@@ -88,24 +86,25 @@ class User(db.Model):
 
 
 class Job(db.Model):
+    # Database model for job postings
     __tablename__ = 'jobs'
 
     id = db.Column(db.Integer, primary_key=True)
-    role = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    cluster_id = db.Column(db.Integer)
-    is_active = db.Column(db.Boolean, default=True)
+    role = db.Column(db.String(100), nullable=False)  # Job title
+    description = db.Column(db.Text, nullable=False)  # Job description
+    cluster_id = db.Column(db.Integer)  # K-means cluster category
+    is_active = db.Column(db.Boolean, default=True)  # Active/inactive status
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # 👤 Link job to the admin who created it
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     # 🔗 Relationships
-    applications = db.relationship('Application', backref='job', lazy=True)
-    creator = db.relationship('User', backref='jobs_created', lazy=True)
+    applications = db.relationship('Application', backref='job', lazy=True)  # Applications for this job
+    creator = db.relationship('User', backref='jobs_created', lazy=True)  # Admin who posted job
 
     def to_dict(self):
-        """Convert job object to dictionary for API responses"""
+        # Convert job object to dictionary for API responses
         return {
             "id": self.id,
             "role": self.role,
@@ -124,20 +123,21 @@ class Job(db.Model):
 
 
 class Application(db.Model):
+    # Database model for job applications (links users to jobs)
     __tablename__ = 'applications'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=False)
-    cluster_id = db.Column(db.Integer)
-    resume_text = db.Column(db.Text, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Applicant
+    job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=False)  # Job applied to
+    cluster_id = db.Column(db.Integer)  # Predicted cluster for resume
+    resume_text = db.Column(db.Text, nullable=False)  # Extracted resume text
     submission_date = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Add unique constraint to prevent duplicate applications
+    # Prevent duplicate applications (same user can't apply to same job twice)
     __table_args__ = (db.UniqueConstraint('user_id', 'job_id', name='unique_user_job_application'),)
 
     def to_dict(self):
-        """Convert application object to dictionary for API responses"""
+        # Convert application object to dictionary for API responses
         return {
             "id": self.id,
             "user_id": self.user_id,
