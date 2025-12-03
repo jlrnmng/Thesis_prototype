@@ -179,6 +179,16 @@
     <h1>Admin Registration</h1>
     <p class="subtitle">Create an admin account to manage jobs, users, and applications.</p>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
     <form id="adminForm" method="POST" action="/admin_register">
       <div class="form-group">
         <label for="username">Username</label>
